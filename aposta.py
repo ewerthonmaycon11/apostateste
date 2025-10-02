@@ -493,10 +493,9 @@ def apostar():
 def historico():
     if not session.get("usuario_id"):
         return redirect(url_for("login"))
-
     uid = session["usuario_id"]
     conn = get_conn()
-    c = conn.cursor()  # RealDictCursor já garantido no get_conn
+    c = conn.cursor()
 
     # pega apostas do usuário
     c.execute("SELECT * FROM bets WHERE usuario_id=%s ORDER BY criado_em DESC", (uid,))
@@ -504,7 +503,7 @@ def historico():
     for b in c.fetchall():
         bdict = row_to_dict(b)
 
-        # pega seleções juntando info do jogo
+        # pega seleções JUNTANDO info do jogo
         c.execute("""
             SELECT bs.*, j.time_a, j.time_b, j.data_hora
             FROM bet_selections bs
@@ -518,23 +517,23 @@ def historico():
         for s in sels_rows:
             sd = row_to_dict(s)
 
-            # Monta descrição legível da aposta
-            esc = sd.get("escolha")
-            if esc == "A":
-                desc = f"Vitória {sd.get('time_a') or 'Time A'}"
-            elif esc == "B":
-                desc = f"Vitória {sd.get('time_b') or 'Time B'}"
-            elif esc == "X":
-                desc = "Empate"
+            # monta descrição legível
+            escolha = sd.get("escolha")
+            if escolha == "A":
+                sd["descricao"] = f"Vitória {sd.get('time_a','Time A')}"
+            elif escolha == "B":
+                sd["descricao"] = f"Vitória {sd.get('time_b','Time B')}"
+            elif escolha == "X":
+                sd["descricao"] = "Empate"
             else:
-                desc = esc or "Indefinido"
+                sd["descricao"] = sd.get("tipo") or "Indefinido"
 
-            sd["descricao"] = desc
+            # garante resultado
+            sd["resultado"] = sd.get("resultado") or "Pendente"
 
-            # formata data
-            dh = sd.get("data_hora")
-            if isinstance(dh, datetime):
-                sd["data_hora"] = dh.strftime("%Y-%m-%d %H:%M")
+            # garante odd em float
+            if sd.get("odd") is not None:
+                sd["odd"] = float(sd["odd"])
 
             selections.append(sd)
 
@@ -865,6 +864,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
