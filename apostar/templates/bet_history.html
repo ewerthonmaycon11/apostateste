@@ -11,39 +11,11 @@
         <div><strong>ID {{ b.id }}</strong> • <small class="small-muted">{{ b.criado_em }}</small></div>
         <div><strong>{{ b.status|capitalize }}</strong></div>
       </div>
-      <div class="small-muted">
-        Stake: R$ {{ '%.2f' % b.stake }} — Odd total: {{ '%.2f' % b.total_odd }} — Potencial: R$ {{ '%.2f' % b.potential }}
-      </div>
+      <div class="small-muted">Stake: R$ {{ '%.2f' % b.stake }} — Odd total: {{ '%.2f' % b.total_odd }} — Potencial: R$ {{ '%.2f' % b.potential }}</div>
 
-      <ul class="mt-2 list-unstyled">
+      <ul class="mt-2">
         {% for s in b.selections %}
-          <li class="mb-1">
-            
-            {% if s.time_a and s.time_b %}
-              <span class="text-secondary small">{{ s.time_a }} x {{ s.time_b }}</span>
-              {% if s.data_hora %}
-                <span class="text-secondary small">em {{ s.data_hora|truncate(16, true, '') }}</span>
-              {% endif %}
-              <br>
-            {% endif %}
-            
-            {% if s.tipo == 'principal' %}
-              <strong>[Principal]</strong>
-              {% if s.escolha == 'A' %}
-                Escolha: <span class="text-success">Vitória {{ s.time_a }}</span>
-              {% elif s.escolha == 'B' %}
-                Escolha: <span class="text-success">Vitória {{ s.time_b }}</span>
-              {% elif s.escolha == 'X' %}
-                Escolha: <span class="text-info">Empate</span>
-              {% else %}
-                Escolha: {{ s.escolha }}
-              {% endif %}
-            {% else %}
-              <strong>[Extra]</strong> Escolha: {{ s.escolha }}
-            {% endif %}
-            
-            — Odd: **{{ '%.2f' % s.odd }}** • Status: <span class="badge bg-{{ 'success' if s.resultado == 'ganho' else ('danger' if s.resultado == 'perdido' else 'warning') }}">{{ s.resultado|capitalize }}</span>
-          </li>
+          <li>{{ s.tipo }} • {{ s.escolha }} — Odd: {{ '%.2f' % s.odd }} • Resultado: {{ s.resultado }}</li>
         {% endfor %}
       </ul>
     </div>
