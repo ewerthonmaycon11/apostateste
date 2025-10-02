@@ -135,6 +135,29 @@ def calc_potential(stake, total_odd):
     return round(stake * total_odd, 2)
 
 # ------------------ ROTAS ------------------
+@app.route("/migrar_betselections")
+def migrar_betselections():
+    try:
+        conn = get_conn()
+        c = conn.cursor()
+        
+        # Adiciona colunas, mas ignora erro caso já existam
+        comandos = [
+            "ALTER TABLE bet_selections ADD COLUMN IF NOT EXISTS time_a TEXT",
+            "ALTER TABLE bet_selections ADD COLUMN IF NOT EXISTS time_b TEXT",
+            "ALTER TABLE bet_selections ADD COLUMN IF NOT EXISTS data_hora TEXT"
+        ]
+        
+        for cmd in comandos:
+            c.execute(cmd)
+
+        conn.commit()
+        conn.close()
+        return "Migração concluída com sucesso 🚀"
+    except Exception as e:
+        return f"Erro: {e}"
+
+
 @app.route("/update_schema")
 def update_schema():
     # Removendo a tentativa de ALTER TABLE, pois o LEFT JOIN no /historico é a abordagem correta.
@@ -293,10 +316,11 @@ def aposta_multipla():
     # salva na tabela bets
     now = datetime.now().isoformat()
     c.execute(
-        "INSERT INTO bets (usuario_id, stake, total_odd, potential, status, criado_em) "
-        "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-        (session["usuario_id"], valor, odd_total, retorno, "pendente", now)
-    )
+    "INSERT INTO bet_selections (bet_id, jogo_id, tipo, escolha, odd, resultado, time_a, time_b, data_hora) "
+    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+    (bet_id, jogo_id, tipo, escolha, odd, "pendente", time_a, time_b, str(data_hora))
+)
+
     bet_row = c.fetchone()
     if not bet_row:
         conn.rollback()
@@ -477,8 +501,22 @@ def apostar():
 
         for s in selections:
             # CRUCIAL: O jogo_id está garantido aqui
-            c.execute("INSERT INTO bet_selections (bet_id, jogo_id, tipo, escolha, odd, resultado) VALUES (%s,%s,%s,%s,%s,%s)",
-                      (bet_id, s.get("jogo_id"), s.get("tipo"), s.get("escolha"), float(s.get("odd")), "pendente"))
+            c.execute(
+    "INSERT INTO bet_selections (bet_id, jogo_id, tipo, escolha, odd, resultado, time_a, time_b, data_hora) "
+    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+    (
+        bet_id,
+        s.get("jogo_id"),
+        s.get("tipo"),
+        s.get("escolha"),
+        float(s.get("odd")),
+        "pendente",
+        s.get("time_a"),
+        s.get("time_b"),
+        str(s.get("data_hora"))
+    )
+)
+
 
         c.execute("UPDATE usuarios SET saldo = saldo - %s WHERE id = %s", (stake, usuario_id))
         conn.commit()
@@ -505,12 +543,11 @@ def historico():
 
         # pega seleções JUNTANDO info do jogo
         c.execute("""
-            SELECT bs.*, j.time_a, j.time_b, j.data_hora
-            FROM bet_selections bs
-            LEFT JOIN jogos j ON bs.jogo_id = j.id
-            WHERE bs.bet_id = %s
-            ORDER BY bs.id
-        """, (b["id"],))
+    SELECT * FROM bet_selections
+    WHERE bet_id = %s
+    ORDER BY id
+""", (b["id"],))
+
         sels_rows = c.fetchall()
 
         selections = []
@@ -864,6 +901,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
