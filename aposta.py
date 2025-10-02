@@ -598,69 +598,98 @@ def sacar():
 # ------------------ ADMIN GERAL ------------------
 @app.route("/admin_dashboard")
 def admin_dashboard():
-    if not session.get("is_admin"):
-        flash("Acesso negado.", "danger")
+    if not session.get("usuario_id") or session.get("usuario_nome") != "admin":
         return redirect(url_for("login"))
 
     conn = get_conn()
     c = conn.cursor()
 
     # Transações pendentes
-    c.execute("""
-        SELECT t.*, u.nome as usuario_nome 
-        FROM transacoes t 
-        JOIN usuarios u ON t.usuario_id=u.id 
-        WHERE t.status='pendente'
-    """)
+    c.execute("SELECT t.*, u.nome as usuario_nome FROM transacoes t LEFT JOIN usuarios u ON t.usuario_id=u.id ORDER BY t.id DESC")
     transacoes = [row_to_dict(r) for r in c.fetchall()]
 
     # Apostas pendentes
-    c.execute("""
-        SELECT b.*, u.nome as usuario_nome
-        FROM bets b
-        JOIN usuarios u ON b.usuario_id = u.id
-        WHERE b.status='pendente'
-        ORDER BY b.criado_em DESC
-    """)
-    apostas_pendentes_rows = c.fetchall()
-
+    c.execute("SELECT b.*, u.nome as usuario_nome FROM bets b LEFT JOIN usuarios u ON b.usuario_id=u.id WHERE b.status='pendente' ORDER BY b.id DESC")
     apostas_pendentes = []
-    for b in apostas_pendentes_rows:
+    for b in c.fetchall():
         bdict = row_to_dict(b)
-        # Pega seleções da aposta JUNTANDO com info do jogo
-        c.execute("SELECT bs.*, j.time_a, j.time_b, j.data_hora FROM bet_selections bs LEFT JOIN jogos j ON bs.jogo_id = j.id WHERE bs.bet_id=%s", (b['id'],))
-        bdict['selections'] = [row_to_dict(s) for s in c.fetchall()]
+        c.execute("""
+            SELECT bs.*, j.time_a, j.time_b, j.data_hora
+            FROM bet_selections bs
+            LEFT JOIN jogos j ON bs.jogo_id=j.id
+            WHERE bs.bet_id=%s
+            ORDER BY bs.id
+        """, (b["id"],))
+        sels = []
+        for s in c.fetchall():
+            sd = row_to_dict(s)
+
+            esc = sd.get("escolha")
+            if esc == "A":
+                desc = f"Vitória {sd.get('time_a') or 'Time A'}"
+            elif esc == "B":
+                desc = f"Vitória {sd.get('time_b') or 'Time B'}"
+            elif esc == "X":
+                desc = "Empate"
+            else:
+                desc = esc or "Indefinido"
+
+            sd["descricao"] = desc
+
+            dh = sd.get("data_hora")
+            if isinstance(dh, datetime):
+                sd["data_hora"] = dh.strftime("%Y-%m-%d %H:%M")
+
+            sels.append(sd)
+
+        bdict["selections"] = sels
         apostas_pendentes.append(bdict)
 
     # Apostas finalizadas
-    c.execute("""
-        SELECT b.*, u.nome as usuario_nome
-        FROM bets b
-        JOIN usuarios u ON b.usuario_id = u.id
-        WHERE b.status IN ('ganho', 'perdido')
-        ORDER BY b.criado_em DESC
-    """)
-    apostas_finalizadas_rows = c.fetchall()
-
+    c.execute("SELECT b.*, u.nome as usuario_nome FROM bets b LEFT JOIN usuarios u ON b.usuario_id=u.id WHERE b.status!='pendente' ORDER BY b.id DESC")
     apostas_finalizadas = []
-    for b in apostas_finalizadas_rows:
+    for b in c.fetchall():
         bdict = row_to_dict(b)
-        c.execute("SELECT bs.*, j.time_a, j.time_b, j.data_hora FROM bet_selections bs LEFT JOIN jogos j ON bs.jogo_id = j.id WHERE bs.bet_id=%s", (b['id'],))
-        bdict['selections'] = [row_to_dict(s) for s in c.fetchall()]
+        c.execute("""
+            SELECT bs.*, j.time_a, j.time_b, j.data_hora
+            FROM bet_selections bs
+            LEFT JOIN jogos j ON bs.jogo_id=j.id
+            WHERE bs.bet_id=%s
+            ORDER BY bs.id
+        """, (b["id"],))
+        sels = []
+        for s in c.fetchall():
+            sd = row_to_dict(s)
+
+            esc = sd.get("escolha")
+            if esc == "A":
+                desc = f"Vitória {sd.get('time_a') or 'Time A'}"
+            elif esc == "B":
+                desc = f"Vitória {sd.get('time_b') or 'Time B'}"
+            elif esc == "X":
+                desc = "Empate"
+            else:
+                desc = esc or "Indefinido"
+
+            sd["descricao"] = desc
+
+            dh = sd.get("data_hora")
+            if isinstance(dh, datetime):
+                sd["data_hora"] = dh.strftime("%Y-%m-%d %H:%M")
+
+            sels.append(sd)
+
+        bdict["selections"] = sels
         apostas_finalizadas.append(bdict)
-        
-    # Jogos (caso queira mostrar também)
-    c.execute("SELECT * FROM jogos ORDER BY data_hora")
-    jogos = [row_to_dict(r) for r in c.fetchall()]
 
     conn.close()
     return render_template(
-        "admin_dashboard.html", 
-        transacoes=transacoes, 
-        apostas_pendentes=apostas_pendentes, 
-        apostas_finalizadas=apostas_finalizadas, 
-        jogos=jogos
+        "admin_dashboard.html",
+        transacoes=transacoes,
+        apostas_pendentes=apostas_pendentes,
+        apostas_finalizadas=apostas_finalizadas,
     )
+
 
 @app.route("/admin/approve_transacao/<int:tid>")
 def admin_approve_transacao(tid):
@@ -836,5 +865,6 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
