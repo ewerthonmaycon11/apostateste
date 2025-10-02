@@ -12,7 +12,10 @@ DB_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://apostaonline_user:rM2mWO5FaaCmMgXEmp2pharDko1Cc1SE@dpg-d3e71fh5pdvs738qrmn0-a.oregon-postgres.render.com/apostaonline"
 )
-
+def get_db_connection():
+    DB_URL = os.getenv("DATABASE_URL", "postgresql://user:senha@localhost:5432/seubanco")
+    conn = psycopg2.connect(DB_URL)
+    return conn
 # ------------------ Helpers DB ------------------
 def get_conn():
     # Usando RealDictCursor em todos os lugares para garantir que os resultados venham como dicionários
@@ -842,6 +845,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
