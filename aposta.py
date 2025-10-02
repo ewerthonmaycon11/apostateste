@@ -278,105 +278,39 @@ def dashboard():
 # ------------------ APOSTA MÚLTIPLA (AJAX) ------------------
 @app.route("/aposta_multipla", methods=["POST"])
 def aposta_multipla():
-    if not session.get("usuario_id"):
-        return jsonify({"ok": False, "erro": "Usuário não logado."})
-
-    data = request.get_json()
-    selecoes = data.get("selecoes", [])
     try:
-        valor = float(data.get("valor", 0))
-    except (TypeError, ValueError):
-        return jsonify({"ok": False, "erro": "Valor inválido."})
+        # Pegando valores do form
+        bet_id = request.form.get("bet_id")
+        jogo_id = request.form.get("jogo_id")
+        tipo = request.form.get("tipo")
+        escolha = request.form.get("escolha")
+        odd = request.form.get("odd")
+        time_a = request.form.get("time_a")
+        time_b = request.form.get("time_b")
+        data_hora = request.form.get("data_hora", str(datetime.now()))  # se não enviar, usa agora
 
-    if not selecoes or valor <= 0:
-        return jsonify({"ok": False, "erro": "Dados inválidos."})
+        # Validação mínima
+        if not bet_id or not jogo_id or not tipo or not escolha or not odd:
+            return "Erro: faltando dados obrigatórios!", 400
 
-    # calcula odd total e retorno potencial
-    try:
-        odd_list = [float(s.get("odd", 0)) for s in selecoes]
-        odd_total = calc_total_odd(odd_list)
-        retorno = calc_potential(valor, odd_total)
+        # Conexão com banco
+        conn = get_conn()
+        c = conn.cursor()
+
+        # Inserção segura no banco
+        c.execute("""
+            INSERT INTO bet_selections
+            (bet_id, jogo_id, tipo, escolha, odd, status, time_a, time_b, data_hora)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (bet_id, jogo_id, tipo, escolha, odd, "pendente", time_a, time_b, data_hora))
+
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("dashboard"))
+
     except Exception as e:
-        return jsonify({"ok": False, "erro": f"Erro ao calcular odds: {e}"})
-
-    conn = get_conn()
-    c = conn.cursor()
-
-    # pega saldo do usuário
-    c.execute("SELECT saldo FROM usuarios WHERE id=%s", (session["usuario_id"],))
-    user = c.fetchone()
-    if not user:
-        conn.close()
-        return jsonify({"ok": False, "erro": "Usuário não encontrado."})
-
-    if user["saldo"] < valor:
-        conn.close()
-        return jsonify({"ok": False, "erro": "Saldo insuficiente."})
-
-    # salva na tabela bets
-    now = datetime.now().isoformat()
-    c.execute(
-    "INSERT INTO bet_selections (bet_id, jogo_id, tipo, escolha, odd, resultado, time_a, time_b, data_hora) "
-    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-    (bet_id, jogo_id, tipo, escolha, odd, "pendente", time_a, time_b, str(data_hora))
-)
-
-    bet_row = c.fetchone()
-    if not bet_row:
-        conn.rollback()
-        conn.close()
-        return jsonify({"ok": False, "erro": "Erro ao criar aposta."})
-
-    bet_id = bet_row["id"]
-    final_selecoes = [] # Lista final para retorno JSON
-
-    # salva seleções em bet_selections
-    for s in selecoes:
-        try:
-            jogo_id = int(s.get("jogo_id")) # ⚠️ CRUCIAL: Garante que é um inteiro
-        except (TypeError, ValueError):
-            # Se não conseguir o ID do jogo, a seleção não será salva
-            continue
-        
-        # Pega info do jogo para salvar no retorno e garantir o link (embora não seja mais necessário
-        # salvar time_a/b no bet_selections, mantemos a consulta para o retorno JSON)
-        c.execute("SELECT time_a, time_b, data_hora FROM jogos WHERE id=%s", (jogo_id,))
-        jogo_info = c.fetchone()
-        
-        # Se não encontrar o jogo, pula (evita salvar seleção inválida)
-        if not jogo_info:
-            continue
-            
-        time_a = jogo_info["time_a"]
-        time_b = jogo_info["time_b"]
-        data_hora = jogo_info["data_hora"]
-
-        escolha = s.get("escolha", "Indefinido")
-        tipo = s.get("tipo", "Indefinido")
-        odd = float(s.get("odd", 0))
-        
-        # Insere APENAS o jogo_id e os detalhes da aposta no bet_selections
-        c.execute(
-            "INSERT INTO bet_selections (bet_id, jogo_id, tipo, escolha, odd, resultado) "
-            "VALUES (%s, %s, %s, %s, %s, %s)",
-            (bet_id, jogo_id, tipo, escolha, odd, "pendente")
-        )
-
-        # Adiciona info do jogo pro retorno JSON (para o dashboard atualizar)
-        s["time_a"] = time_a
-        s["time_b"] = time_b
-        s["data_hora"] = data_hora
-        final_selecoes.append(s)
-
-    # só agora desconta o saldo
-    novo_saldo = user["saldo"] - valor
-    c.execute("UPDATE usuarios SET saldo=%s WHERE id=%s", (novo_saldo, session["usuario_id"]))
-
-    conn.commit()
-    conn.close()
-    
-    # Retorna as seleções atualizadas para o frontend
-    return jsonify({"ok": True, "retorno": retorno, "bet_id": bet_id, "selecoes": final_selecoes})
+        return f"Erro: {e}", 500
 
 
 @app.route("/jogo/<int:jogo_id>")
@@ -901,6 +835,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
