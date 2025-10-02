@@ -276,41 +276,48 @@ def dashboard():
     return render_template("dashboard.html", usuario=usuario, jogos=jogos)
 
 # ------------------ APOSTA MÚLTIPLA (AJAX) ------------------
-@app.route("/aposta_multipla", methods=["POST"])
+@app.route('/aposta_multipla', methods=['POST'])
 def aposta_multipla():
     try:
-        # Pegando valores do form
-        bet_id = request.form.get("bet_id")
-        jogo_id = request.form.get("jogo_id")
-        tipo = request.form.get("tipo")
-        escolha = request.form.get("escolha")
-        odd = request.form.get("odd")
-        time_a = request.form.get("time_a")
-        time_b = request.form.get("time_b")
-        data_hora = request.form.get("data_hora", str(datetime.now()))  # se não enviar, usa agora
+        data = request.get_json()  # <- pega JSON do fetch
+        selecoes = data.get('selecoes', [])
+        valor = float(data.get('valor', 0))
+        usuario_id = session.get('usuario_id')  # assume que você tem login
 
-        # Validação mínima
-        if not bet_id or not jogo_id or not tipo or not escolha or not odd:
-            return "Erro: faltando dados obrigatórios!", 400
+        if not selecoes or valor <= 0:
+            return jsonify({"ok": False, "erro": "Seleções ou valor inválido"})
 
-        # Conexão com banco
-        conn = get_conn()
-        c = conn.cursor()
+        retorno_total = 1.0
+        for s in selecoes:
+            retorno_total *= float(s['odd'])
 
-        # Inserção segura no banco
-        c.execute("""
-            INSERT INTO bet_selections
-            (bet_id, jogo_id, tipo, escolha, odd, status, time_a, time_b, data_hora)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (bet_id, jogo_id, tipo, escolha, odd, "pendente", time_a, time_b, data_hora))
+        data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # INSERIR CADA SELEÇÃO NO DB
+        conn = get_db_connection()  # sua função de conexão
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO bets (usuario_id, valor, retorno_potencial, data_hora) VALUES (%s, %s, %s, %s) RETURNING id",
+            (usuario_id, valor, valor*retorno_total, data_hora)
+        )
+        bet_id = cur.fetchone()[0]
+
+        for s in selecoes:
+            cur.execute(
+                """INSERT INTO bet_selections 
+                   (bet_id, jogo_id, tipo, escolha, odd, status, time_a, time_b, data_hora) 
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (bet_id, s['jogo'], s['tipo'], s['time'], s['odd'], "pendente",
+                 s.get('time_a', s['time']), s.get('time_b', ''), data_hora)
+            )
 
         conn.commit()
+        cur.close()
         conn.close()
 
-        return redirect(url_for("dashboard"))
-
+        return jsonify({"ok": True, "retorno": valor*retorno_total})
     except Exception as e:
-        return f"Erro: {e}", 500
+        return jsonify({"ok": False, "erro": str(e)})
 
 
 @app.route("/jogo/<int:jogo_id>")
@@ -835,6 +842,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
