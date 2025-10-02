@@ -8,14 +8,27 @@
   {% for b in bets %}
     <div class="mb-3 border-bottom pb-2">
       <div class="d-flex justify-content-between">
-        <div><strong>ID {{ b.id }}</strong> • <small class="small-muted">{{ b.criado_em }}</small></div>
+        <div>
+          <strong>ID {{ b.id }}</strong> • 
+          <small class="small-muted">{{ b.criado_em }}</small>
+        </div>
         <div><strong>{{ b.status|capitalize }}</strong></div>
       </div>
-      <div class="small-muted">Stake: R$ {{ '%.2f' % b.stake }} — Odd total: {{ '%.2f' % b.total_odd }} — Potencial: R$ {{ '%.2f' % b.potential }}</div>
+
+      <div class="small-muted">
+        Stake: R$ {{ '%.2f' % b.stake }} — 
+        Odd total: {{ '%.2f' % b.total_odd }} — 
+        Potencial: R$ {{ '%.2f' % b.potential }}
+      </div>
 
       <ul class="mt-2">
         {% for s in b.selections %}
-          <li>{{ s.tipo }} • {{ s.escolha }} — Odd: {{ '%.2f' % s.odd }} • Resultado: {{ s.resultado }}</li>
+          <li>
+            {{ s.tipo|capitalize }} • 
+            {{ s.descricao|default('Indefinido') }} — 
+            Odd: {{ '%.2f' % s.odd }} • 
+            Resultado: {{ s.resultado|default('Pendente') }}
+          </li>
         {% endfor %}
       </ul>
     </div>
