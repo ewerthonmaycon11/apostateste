@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h2 class="mb-4">Solicitar Saque</h2>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <form method="POST" action="{{ url_for('solicitar_saque') }}">
+                <div class="mb-3">
+                    <label>Valor a sacar</label>
+                    <input type="number" name="valor" class="form-control" min="1" step="0.01" required>
+                </div>
+                <button class="btn btn-primary w-100">Solicitar Saque</button>
+            </form>
+            <p class="mt-3 text-muted">O saque será aprovado pelo admin.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

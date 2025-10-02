@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Apostar — {{ jogo.time_a }} x {{ jogo.time_b }}{% endblock %}
+
+{% block conteudo %}
+<div class="row">
+  <div class="col-md-8">
+    <div class="card p-4">
+      <h4 class="mb-2">{{ jogo.time_a }} <span class="small-muted">x</span> {{ jogo.time_b }}</h4>
+      <div class="small-muted mb-3">Data: {{ jogo.data_hora or "N/A" }}</div>
+
+      <form id="betForm" method="POST" action="{{ url_for('apostar') }}">
+        <input type="hidden" name="jogo_id" value="{{ jogo.id }}">
+
+        <div class="mb-3">
+          <label class="form-label">Aposta principal</label>
+          <div class="btn-group w-100" role="group">
+            <input type="radio" class="btn-check" name="aposta_principal" id="selA" value="A" autocomplete="off" checked>
+            <label class="btn btn-outline-secondary" for="selA">{{ jogo.time_a }} ({{ '%.2f' % jogo.odd_a }})</label>
+
+            <input type="radio" class="btn-check" name="aposta_principal" id="selX" value="X" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="selX">Empate ({{ '%.2f' % jogo.odd_x }})</label>
+
+            <input type="radio" class="btn-check" name="aposta_principal" id="selB" value="B" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="selB">{{ jogo.time_b }} ({{ '%.2f' % jogo.odd_b }})</label>
+          </div>
+        </div>
+
+        {% if extras|length > 0 %}
+        <div class="mb-3">
+          <label class="form-label">Extras (opcionais)</label>
+          <div>
+            {% for ex in extras %}
+              <div class="form-check">
+                <input class="form-check-input extra-checkbox" type="checkbox" name="extras" id="ex{{ ex.id }}" value="{{ ex.id }}" data-odd="{{ ex.odd }}">
+                <label class="form-check-label" for="ex{{ ex.id }}">{{ ex.descricao }} — {{ '%.2f' % ex.odd }}</label>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label class="form-label">Valor da aposta (R$)</label>
+          <input type="number" class="form-control" name="valor" id="valor" min="1" step="0.01" placeholder="Ex: 10.00" required>
+        </div>
+
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+          <div>
+            <div class="small-muted">Odd total</div>
+            <div id="odd_total" class="h5 mb-0">1.00</div>
+          </div>
+          <div class="text-end">
+            <div class="small-muted">Ganho potencial</div>
+            <div id="potencial" class="h5 mb-0">R$ 0.00</div>
+          </div>
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-accent">Confirmar aposta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h6>Informações</h6>
+      <p class="small-muted">Regras rápidas:</p>
+      <ul class="small">
+        <li>Aposta principal obrigatória (Casa/Empate/Fora).</li>
+        <li>Extras são opcionais e multiplicam a odd (múltipla).</li>
+        <li>Saldo é debitado no momento da criação da aposta.</li>
+      </ul>
+      {% if session.get('is_admin') %}
+      <hr>
+      <a href="{{ url_for('admin_futebol') }}" class="btn btn-sm btn-outline-secondary w-100">Ir para Admin Futebol</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  // cálculo local em tempo real (usa os valores já renderizados)
+  const oddA = parseFloat({{ jogo.odd_a }});
+  const oddX = parseFloat({{ jogo.odd_x }});
+  const oddB = parseFloat({{ jogo.odd_b }});
+
+  function getPrincipalOdd(){
+    const sel = document.querySelector('input[name="aposta_principal"]:checked').value;
+    if(sel === 'A') return oddA;
+    if(sel === 'X') return oddX;
+    return oddB;
+  }
+
+  function calcular(){
+    const stake = parseFloat(document.getElementById('valor').value) || 0;
+    let total = getPrincipalOdd();
+    document.querySelectorAll('.extra-checkbox').forEach(cb=>{
+      if(cb.checked) total = total * parseFloat(cb.dataset.odd);
+    });
+    const potencial = (stake * total).toFixed(2);
+    document.getElementById('odd_total').innerText = total.toFixed(2);
+    document.getElementById('potencial').innerText = 'R$ ' + (stake > 0 ? potencial : '0.00');
+  }
+
+  document.querySelectorAll('input[name="aposta_principal"], .extra-checkbox').forEach(el=>{
+    el.addEventListener('change', calcular);
+  });
+  document.getElementById('valor').addEventListener('input', calcular);
+
+  // calcula ao abrir
+  calcular();
+</script>
+{% endblock %}

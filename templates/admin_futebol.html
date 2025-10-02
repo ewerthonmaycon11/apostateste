@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Admin Futebol{% endblock %}
+
+{% block conteudo %}
+<h4 class="mb-3">Admin — Futebol</h4>
+
+<div class="card p-3 mb-3">
+  <h6>Adicionar Jogo</h6>
+  <form method="POST" action="{{ url_for('admin_futebol') }}">
+    <div class="row">
+      <div class="col-md-4 mb-2">
+        <input class="form-control" name="time_a" placeholder="Time A" required>
+      </div>
+      <div class="col-md-4 mb-2">
+        <input class="form-control" name="time_b" placeholder="Time B" required>
+      </div>
+      <div class="col-md-4 mb-2">
+        <input class="form-control" name="data_hora" type="datetime-local" required>
+      </div>
+      <div class="col-md-3 mb-2">
+        <input class="form-control" name="odd_a" type="number" step="0.01" placeholder="Odd A" required>
+      </div>
+      <div class="col-md-3 mb-2">
+        <input class="form-control" name="odd_x" type="number" step="0.01" placeholder="Odd X" required>
+      </div>
+      <div class="col-md-3 mb-2">
+        <input class="form-control" name="odd_b" type="number" step="0.01" placeholder="Odd B" required>
+      </div>
+      <div class="col-md-3 mb-2">
+        <button class="btn btn-accent w-100" type="submit">Criar Jogo</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="card p-3">
+  <h6>Jogos Cadastrados</h6>
+  <div class="list-group">
+    {% for j in jogos %}
+      <div class="list-group-item d-flex justify-content-between align-items-start">
+        <div>
+          <strong>{{ j.time_a }} x {{ j.time_b }}</strong>
+          <div class="small-muted">Data: {{ j.data_hora }}</div>
+          <div class="small-muted">Odds: A {{ '%.2f' % j.odd_a }} — X {{ '%.2f' % j.odd_x }} — B {{ '%.2f' % j.odd_b }}</div>
+
+          <!-- extras atuais do jogo -->
+          <div class="mt-2">
+            {% set extras = namespace(list=[]) %}
+            {% for ex in ( ( ( ([]) ) ) ) %}{% endfor %}
+            <!-- nota: extras carregadas via backend; se quiser mostrar, ajuste no server para incluir extras em 'j' -->
+          </div>
+        </div>
+
+        <div class="text-end">
+          <form method="POST" action="{{ url_for('admin_add_extra', jogo_id=j.id) }}" class="mb-2">
+            <div class="d-flex">
+              <input name="descricao" class="form-control form-control-sm me-2" placeholder="Extra (ex: +2,5 gols)" required>
+              <input name="odd" class="form-control form-control-sm me-2" placeholder="Odd" type="number" step="0.01" required>
+              <button class="btn btn-sm btn-outline-success">Adicionar</button>
+            </div>
+          </form>
+
+          <a href="{{ url_for('admin_delete_game', jogo_id=j.id) }}" class="btn btn-sm btn-danger">Excluir Jogo</a>
+        </div>
+      </div>
+    {% else %}
+      <div class="list-group-item small-muted">Nenhum jogo.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

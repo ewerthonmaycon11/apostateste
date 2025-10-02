@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Múltipla — Apostas{% endblock %}
+
+{% block conteudo %}
+<div class="row">
+  <div class="col-md-8">
+    <h5>Escolha seleções</h5>
+    <div class="card p-3 mb-3">
+      <div class="small-muted">Clique nas odds para adicionar ao cupom de múltipla.</div>
+      <div class="row">
+        {% for jogo in jogos %}
+        <div class="col-md-6 mb-2">
+          <div class="p-2 border rounded">
+            <div class="d-flex justify-content-between">
+              <strong>{{ jogo.time_a }} x {{ jogo.time_b }}</strong>
+              <small class="text-muted">{{ jogo.data_hora or "" }}</small>
+            </div>
+            <div class="mt-2 d-flex gap-2">
+              <button class="btn btn-outline-secondary btn-sm add-selection" data-jogo='{{ jogo|tojson }}' data-choice="A">A {{ '%.2f' % jogo.odd_a }}</button>
+              <button class="btn btn-outline-secondary btn-sm add-selection" data-jogo='{{ jogo|tojson }}' data-choice="X">X {{ '%.2f' % jogo.odd_x }}</button>
+              <button class="btn btn-outline-secondary btn-sm add-selection" data-jogo='{{ jogo|tojson }}' data-choice="B">B {{ '%.2f' % jogo.odd_b }}</button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h6>Cupom</h6>
+      <ul id="coupon" class="list-group mb-3"></ul>
+
+      <div class="mb-3">
+        <label class="form-label">Valor (R$)</label>
+        <input id="stake" class="form-control" type="number" min="1" step="0.01">
+      </div>
+
+      <div class="mb-3">
+        <div class="small-muted">Odd total</div>
+        <div id="totalOdd" class="h5">1.00</div>
+      </div>
+      <div class="mb-3">
+        <div class="small-muted">Ganho potencial</div>
+        <div id="totalPot" class="h5">R$ 0.00</div>
+      </div>
+
+      <button id="placeBet" class="btn btn-accent w-100">Confirmar Múltipla</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let selections = [];
+
+  function updateCoupon(){
+    const list = document.getElementById('coupon');
+    list.innerHTML = '';
+    let odd = 1;
+    selections.forEach((s, idx)=>{
+      odd *= parseFloat(s.odd);
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-center';
+      li.innerHTML = `<div>${s.jogo.time_a} x ${s.jogo.time_b} — ${s.choice}</div><div>${parseFloat(s.odd).toFixed(2)} <button data-idx="${idx}" class="btn btn-sm btn-link text-danger remove">✕</button></div>`;
+      list.appendChild(li);
+    });
+    const stake = parseFloat(document.getElementById('stake').value) || 0;
+    document.getElementById('totalOdd').innerText = odd.toFixed(2);
+    document.getElementById('totalPot').innerText = 'R$ ' + (stake > 0 ? (stake * odd).toFixed(2) : '0.00');
+
+    document.querySelectorAll('.remove').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const idx = parseInt(e.target.dataset.idx);
+        selections.splice(idx,1);
+        updateCoupon();
+      });
+    });
+  }
+
+  document.querySelectorAll('.add-selection').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const jogo = JSON.parse(btn.dataset.jogo);
+      const choice = btn.dataset.choice;
+      let odd = choice === 'A' ? jogo.odd_a : (choice === 'X' ? jogo.odd_x : jogo.odd_b);
+      selections.push({jogo, choice, odd});
+      updateCoupon();
+    });
+  });
+
+  document.getElementById('stake').addEventListener('input', updateCoupon);
+
+  document.getElementById('placeBet').addEventListener('click', async ()=>{
+    if(selections.length === 0) { alert('Adicione pelo menos 1 seleção.'); return;}
+    const stake = parseFloat(document.getElementById('stake').value);
+    if(!stake || stake <= 0){ alert('Informe um valor.'); return; }
+    // construir payload
+    const payload = {
+      stake,
+      selections: selections.map(s => ({ jogo_id: s.jogo.id, tipo: 'principal', escolha: s.choice, odd: s.odd }))
+    };
+    const res = await fetch('{{ url_for("apostar") }}', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if(res.ok){ window.location.href = '{{ url_for("historico") }}'; }
+    else { const t = await res.text(); alert('Erro: ' + t); }
+  });
+</script>
+{% endblock %}

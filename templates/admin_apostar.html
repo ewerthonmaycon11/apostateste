@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h2>Administração</h2>
+
+<!-- Cadastro de jogos -->
+<div class="card bg-secondary p-3 mb-4">
+  <h4>Adicionar Jogo</h4>
+  <form method="POST">
+    <div class="row">
+      <div class="col-md-3">
+        <input type="text" name="time1" class="form-control" placeholder="Time 1" required>
+      </div>
+      <div class="col-md-2">
+        <input type="number" step="0.01" name="odd1" class="form-control" placeholder="Odd 1" required>
+      </div>
+      <div class="col-md-3">
+        <input type="text" name="time2" class="form-control" placeholder="Time 2" required>
+      </div>
+      <div class="col-md-2">
+        <input type="number" step="0.01" name="odd2" class="form-control" placeholder="Odd 2" required>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-success">Adicionar</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Jogos já cadastrados -->
+<h4>Jogos cadastrados</h4>
+{% for jogo in jogos %}
+  <div class="card bg-dark p-3 mb-3">
+    <h5>{{ jogo.time1 }} ({{ jogo.odd1 }}) x {{ jogo.time2 }} ({{ jogo.odd2 }})</h5>
+    <form method="POST" action="{{ url_for('admin_futebom) }}" class="mt-2">
+      <div class="row">
+        <div class="col-md-6">
+          <input type="text" name="nome" class="form-control" placeholder="Mercado (ex: +2.5 gols)">
+        </div>
+        <div class="col-md-3">
+          <input type="number" step="0.01" name="odd" class="form-control" placeholder="Odd">
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-warning">Adicionar Mercado</button>
+        </div>
+      </div>
+    </form>
+    {% if jogo.mercados %}
+      <ul class="mt-2">
+        {% for nome, odd in jogo.mercados.items() %}
+          <li>{{ nome }} ({{ odd }})</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endfor %}
+
+<hr>
+
+<!-- Apostas feitas -->
+<h4>Apostas registradas</h4>
+{% for aposta in apostas %}
+  <div class="card bg-secondary p-3 mb-3">
+    <p><b>Usuário:</b> {{ aposta.usuario }}</p>
+    <p><b>Principal:</b> {{ aposta.principal }}</p>
+    <p><b>Extras:</b> {{ aposta.extras }}</p>
+    <p><b>Valor:</b> R$ {{ aposta.valor }}</p>
+    <p><b>Odd final:</b> {{ aposta.odd_final }}</p>
+    <p><b>Status:</b> {{ aposta.status }}</p>
+    {% if aposta.status == "pendente" %}
+      <a href="{{ url_for('admin_resolver', aposta_id=loop.index0, resultado='vitoria') }}" class="btn btn-success btn-sm">Vitória</a>
+      <a href="{{ url_for('admin_resolver', aposta_id=loop.index0, resultado='derrota') }}" class="btn btn-danger btn-sm">Derrota</a>
+    {% endif %}
+  </div>
+{% endfor %}
+{% endblock %}

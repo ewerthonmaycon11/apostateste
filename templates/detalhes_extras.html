@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Editar Odds Extras{% endblock %}
+{% block conteudo %}
+<h2 class="text-orange mb-4">Odds Extras - {{ jogo.time1 }} vs {{ jogo.time2 }}</h2>
+
+<div class="card p-3 mb-4">
+    <form method="POST" action="{{ url_for('adicionar_extra', jogo_id=jogo.id) }}">
+        <div class="row mb-2">
+            <div class="col">
+                <input class="form-control" name="nome" placeholder="Nome da Aposta Extra" required>
+            </div>
+            <div class="col">
+                <input class="form-control" name="odd" type="number" step="0.01" placeholder="Odd" required>
+            </div>
+        </div>
+        <button class="btn btn-primary mt-2 w-100" type="submit">Adicionar Extra</button>
+    </form>
+</div>
+
+<div class="card p-3">
+    <h4>Extras Existentes</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Odd</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for extra in extras %}
+            <tr>
+                <td>{{ extra.nome }}</td>
+                <td>{{ extra.odd }}</td>
+                <td>
+                    <a href="{{ url_for('deletar_extra', id=extra.id) }}" class="btn btn-danger btn-sm">Deletar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

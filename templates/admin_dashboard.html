@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Painel Admin{% endblock %}
+
+{% block conteudo %}
+<h2 class="text-orange mb-4">Painel do Admin</h2>
+
+<!-- Adicionar Jogo -->
+<div class="card mb-4 p-3 shadow-sm">
+    <h4 class="mb-3">Adicionar Jogo</h4>
+    <form method="POST" action="{{ url_for('admin_futebol') }}">
+        <div class="row mb-2">
+            <div class="col">
+                <input class="form-control" name="time_a" placeholder="Time 1" required>
+            </div>
+            <div class="col">
+                <input class="form-control" name="time_b" placeholder="Time 2" required>
+            </div>
+        </div>
+        <div class="row mb-2">
+            <div class="col">
+                <input class="form-control" name="odd_a" type="number" step="0.01" placeholder="Odd Time 1" required>
+            </div>
+            <div class="col">
+                <input class="form-control" name="odd_x" type="number" step="0.01" placeholder="Odd Empate" required>
+            </div>
+            <div class="col">
+                <input class="form-control" name="odd_b" type="number" step="0.01" placeholder="Odd Time 2" required>
+            </div>
+        </div>
+        <div class="row mb-2">
+            <div class="col">
+                <input class="form-control" name="data_hora" type="datetime-local" required>
+            </div>
+        </div>
+        <button class="btn btn-primary mt-2" type="submit">Adicionar Jogo</button>
+    </form>
+</div>
+
+<!-- Aprovar/Reprovar Depósitos e Saques -->
+<div class="card mb-4 p-3 shadow-sm">
+    <h4 class="mb-3">Aprovar/Reprovar Depósitos e Saques</h4>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Usuário</th>
+                <th>Tipo</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transacao in transacoes %}
+            <tr>
+                <td>{{ transacao.usuario_nome or 'Desconhecido' }}</td>
+                <td>{{ transacao.tipo }}</td>
+                <td>R$ {{ "%.2f"|format(transacao.valor) }}</td>
+                <td>{{ transacao.status }}</td>
+                <td>
+                    {% if transacao.status == 'pendente' %}
+                        <a href="{{ url_for('admin_approve_transacao', tid=transacao.id) }}" class="btn btn-success btn-sm">Aprovar</a>
+                        <a href="{{ url_for('admin_reject_transacao', tid=transacao.id) }}" class="btn btn-danger btn-sm">Reprovar</a>
+                    {% else %}
+                        <span class="text-muted">Concluído</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center text-muted">Nenhuma transação pendente</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Apostas Pendentes -->
+<div class="card mb-4 p-3 shadow-sm">
+    <h4 class="mb-3">Apostas Pendentes</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Usuário</th>
+                <th>Stake</th>
+                <th>Potencial</th>
+                <th>O que apostou</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aposta in apostas_pendentes %}
+            <tr>
+                <td>{{ aposta.id }}</td>
+                <td>{{ aposta.usuario_nome or 'Desconhecido' }}</td>
+                <td>R$ {{ "%.2f"|format(aposta.stake) }}</td>
+                <td>R$ {{ "%.2f"|format(aposta.potential) }}</td>
+                <td>
+                    <ul class="list-unstyled mb-0">
+                        {% for sel in aposta.selections %}
+                        <li>
+                            <small class="d-block text-muted">
+                                Jogo: {{ sel.time_a }} vs {{ sel.time_b }} ({{ sel.data_hora }})
+                            </small>
+                            {% if sel.tipo == 'principal' %}
+                                <strong>Principal:</strong>
+                                {% if sel.escolha == 'A' %}
+                                    Vitória {{ sel.time_a }}
+                                {% elif sel.escolha == 'X' %}
+                                    Empate
+                                {% else %}
+                                    Vitória {{ sel.time_b }}
+                                {% endif %}
+                                (Odd: {{ sel.odd }})
+                            {% else %}
+                                <strong>Extra:</strong> {{ sel.escolha }} (Odd: {{ sel.odd }})
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin_resolve_bet', bet_id=aposta.id) }}" class="d-inline">
+                        <input type="hidden" name="action" value="ganho">
+                        <button type="submit" class="btn btn-success btn-sm mb-1">Vitória</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin_resolve_bet', bet_id=aposta.id) }}" class="d-inline">
+                        <input type="hidden" name="action" value="perdido">
+                        <button type="submit" class="btn btn-danger btn-sm">Derrota</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted">Nenhuma aposta pendente</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Apostas Finalizadas -->
+<div class="card mb-4 p-3 shadow-sm">
+    <h4 class="mb-3">Apostas Finalizadas</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Usuário</th>
+                <th>Stake</th>
+                <th>Potencial</th>
+                <th>O que apostou</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aposta in apostas_finalizadas %}
+            <tr>
+                <td>{{ aposta.id }}</td>
+                <td>{{ aposta.usuario_nome or 'Desconhecido' }}</td>
+                <td>R$ {{ "%.2f"|format(aposta.stake) }}</td>
+                <td>R$ {{ "%.2f"|format(aposta.potential) }}</td>
+                <td>
+                    <ul class="list-unstyled mb-0">
+                        {% for sel in aposta.selections %}
+                        <li>
+                            <small class="d-block text-muted">
+                                Jogo: {{ sel.time_a }} vs {{ sel.time_b }} ({{ sel.data_hora }})
+                            </small>
+                            {% if sel.tipo == 'principal' %}
+                                <strong>Principal:</strong>
+                                {% if sel.escolha == 'A' %}
+                                    Vitória {{ sel.time_a }}
+                                {% elif sel.escolha == 'X' %}
+                                    Empate
+                                {% else %}
+                                    Vitória {{ sel.time_b }}
+                                {% endif %}
+                                (Odd: {{ sel.odd }})
+                            {% else %}
+                                <strong>Extra:</strong> {{ sel.escolha }} (Odd: {{ sel.odd }})
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>{{ aposta.status|capitalize }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted">Nenhuma aposta finalizada</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

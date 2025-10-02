@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card p-4">
+            <h3 class="mb-4 text-center">Apostar em: {{ jogo.time_casa }} x {{ jogo.time_fora }}</h3>
+
+            <!-- Seleção de aposta principal -->
+            <div class="mb-3">
+                <label class="form-label">Escolha a aposta principal:</label>
+                <select class="form-select" id="aposta_principal">
+                    <option value="{{ jogo.odd_casa }}" data-time="{{ jogo.time_casa }}">Vitória {{ jogo.time_casa }}</option>
+                    <option value="{{ jogo.odd_empate }}" data-time="Empate">Empate</option>
+                    <option value="{{ jogo.odd_fora }}" data-time="{{ jogo.time_fora }}">Vitória {{ jogo.time_fora }}</option>
+                </select>
+            </div>
+
+            <!-- Apostas extras -->
+            {% if extras %}
+            <div class="mb-3">
+                <label class="form-label">Apostas Extras:</label>
+                {% for extra in extras %}
+                    <div class="form-check">
+                        <input class="form-check-input extra-odd" type="checkbox" value="{{ extra.odd }}" id="extra{{ extra.id }}">
+                        <label class="form-check-label" for="extra{{ extra.id }}">{{ extra.nome }} - Odd: {{ extra.odd }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Valor da aposta -->
+            <div class="mb-3">
+                <label for="valor" class="form-label">Valor da aposta:</label>
+                <input type="number" class="form-control" id="valor" min="1" placeholder="Digite o valor da aposta">
+            </div>
+
+            <!-- Ganho potencial -->
+            <div class="mb-3">
+                <label class="form-label">Ganho Potencial:</label>
+                <input type="text" class="form-control" id="ganho_potencial" readonly>
+            </div>
+
+            <div class="d-grid">
+                <button id="apostarBtn" class="btn btn-orange">Confirmar Aposta</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const apostaPrincipal = document.getElementById('aposta_principal');
+    const extras = document.querySelectorAll('.extra-odd');
+    const valorInput = document.getElementById('valor');
+    const ganhoPotencial = document.getElementById('ganho_potencial');
+
+    function calcularGanho() {
+        let oddTotal = parseFloat(apostaPrincipal.value) || 1;
+
+        extras.forEach(extra => {
+            if (extra.checked) {
+                oddTotal *= parseFloat(extra.value);
+            }
+        });
+
+        const valor = parseFloat(valorInput.value) || 0;
+        const ganho = (valor * oddTotal).toFixed(2);
+        ganhoPotencial.value = valor > 0 ? 'R$ ' + ganho : '';
+    }
+
+    apostaPrincipal.addEventListener('change', calcularGanho);
+    valorInput.addEventListener('input', calcularGanho);
+    extras.forEach(extra => extra.addEventListener('change', calcularGanho));
+
+    document.getElementById('apostarBtn').addEventListener('click', () => {
+        const valor = parseFloat(valorInput.value);
+        if (valor <= 0 || isNaN(valor)) {
+            alert('Digite um valor válido para apostar!');
+            return;
+        }
+        // Submeter via POST usando fetch ou formulário normal
+        // Exemplo:
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ url_for('apostar', jogo_id=jogo.id) }}";
+
+        const inputValor = document.createElement('input');
+        inputValor.type = 'hidden';
+        inputValor.name = 'valor';
+        inputValor.value = valor;
+        form.appendChild(inputValor);
+
+        const inputPrincipal = document.createElement('input');
+        inputPrincipal.type = 'hidden';
+        inputPrincipal.name = 'aposta_principal';
+        inputPrincipal.value = apostaPrincipal.options[apostaPrincipal.selectedIndex].dataset.time;
+        form.appendChild(inputPrincipal);
+
+        extras.forEach(extra => {
+            if (extra.checked) {
+                const inputExtra = document.createElement('input');
+                inputExtra.type = 'hidden';
+                inputExtra.name = 'extras';
+                inputExtra.value = extra.id;
+                form.appendChild(inputExtra);
+            }
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Registrar — Apostas{% endblock %}
+
+{% block conteudo %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card p-4">
+      <h4 class="mb-3">Criar Conta</h4>
+      <form method="POST" action="{{ url_for('registrar') }}">
+        <div class="mb-3">
+          <label class="form-label">Nome</label>
+          <input class="form-control" name="nome" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">E-mail</label>
+          <input class="form-control" name="email" type="email" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Senha</label>
+          <input class="form-control" name="senha" type="password" required>
+        </div>
+        <div class="d-grid">
+          <button class="btn btn-accent">Criar Conta</button>
+        </div>
+      </form>
+      <div class="text-center mt-3 small-muted">
+        Já tem conta? <a href="{{ url_for('login') }}" style="color:var(--orange)">Entrar</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Admin — Painel{% endblock %}
+
+{% block conteudo %}
+<h4 class="mb-3">Painel do Admin</h4>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card p-3 mb-3">
+      <h6>Transações pendentes</h6>
+      <table class="table">
+        <thead><tr><th>Usuário</th><th>Tipo</th><th>Valor</th><th>Ações</th></tr></thead>
+        <tbody>
+        {% for t in transacoes %}
+          <tr>
+            <td>{{ t.usuario_nome }}</td>
+            <td>{{ t.tipo }}</td>
+            <td>R$ {{ '%.2f' % t.valor }}</td>
+            <td>
+              <a href="{{ url_for('admin_approve_transacao', tid=t.id) }}" class="btn btn-sm btn-success">Aprovar</a>
+              <a href="{{ url_for('admin_reject_transacao', tid=t.id) }}" class="btn btn-sm btn-danger">Reprovar</a>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="text-center small-muted">Nenhuma transação pendente.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card p-3">
+      <h6>Apostas pendentes</h6>
+      <table class="table">
+        <thead><tr><th>ID</th><th>Usuário</th><th>Stake</th><th>Potencial</th><th>Ações</th></tr></thead>
+        <tbody>
+        {% for b in apostas %}
+          <tr>
+            <td>{{ b.id }}</td>
+            <td>{{ b.usuario_nome }}</td>
+            <td>R$ {{ '%.2f' % b.stake }}</td>
+            <td>R$ {{ '%.2f' % b.potential }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('admin_resolve_bet', bet_id=b.id) }}" style="display:inline-block">
+                <input type="hidden" name="action" value="ganho">
+                <button class="btn btn-sm btn-success">Vitória</button>
+              </form>
+              <form method="POST" action="{{ url_for('admin_resolve_bet', bet_id=b.id) }}" style="display:inline-block">
+                <input type="hidden" name="action" value="perdido">
+                <button class="btn btn-sm btn-danger">Derrota</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="text-center small-muted">Nenhuma aposta pendente.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h6>Jogos</h6>
+      <table class="table">
+        <thead><tr><th>Jogo</th><th>Data</th><th>Ações</th></tr></thead>
+        <tbody>
+          {% for j in jogos %}
+            <tr>
+              <td>{{ j.time_a }} x {{ j.time_b }}</td>
+              <td>{{ j.data_hora }}</td>
+              <td>
+                <a href="{{ url_for('admin_futebol') }}" class="btn btn-sm btn-outline-secondary">Gerenciar extras</a>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="text-center small-muted">Nenhum jogo cadastrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <form method="POST" action="{{ url_for('admin_clear_history') }}">
+        <button class="btn btn-outline-danger mt-3">Limpar histórico (apostas & transações)</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
