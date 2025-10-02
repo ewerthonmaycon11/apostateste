@@ -493,9 +493,10 @@ def apostar():
 def historico():
     if not session.get("usuario_id"):
         return redirect(url_for("login"))
+
     uid = session["usuario_id"]
     conn = get_conn()
-    c = conn.cursor() # O cursor RealDictCursor está garantido no get_conn
+    c = conn.cursor()  # RealDictCursor já garantido no get_conn
 
     # pega apostas do usuário
     c.execute("SELECT * FROM bets WHERE usuario_id=%s ORDER BY criado_em DESC", (uid,))
@@ -503,7 +504,7 @@ def historico():
     for b in c.fetchall():
         bdict = row_to_dict(b)
 
-        # pega seleções JUNTANDO info do jogo (time_a/time_b/data_hora)
+        # pega seleções juntando info do jogo
         c.execute("""
             SELECT bs.*, j.time_a, j.time_b, j.data_hora
             FROM bet_selections bs
@@ -516,25 +517,25 @@ def historico():
         selections = []
         for s in sels_rows:
             sd = row_to_dict(s)
-            
-            # Tratamento para compatibilidade com o template
-            if "escolha" in sd and sd.get("escolha") is not None:
-                sd["time"] = sd.get("escolha")
-            else:
-                esc = sd.get("escolha") or sd.get("resultado") or None
-                if esc == "A":
-                    sd["time"] = sd.get("time_a") or "Time A"
-                elif esc == "B":
-                    sd["time"] = sd.get("time_b") or "Time B"
-                elif esc == "X":
-                    sd["time"] = "Empate"
-                else:
-                    sd["time"] = sd.get("time") or sd.get("escolha") or "Indefinido"
 
+            # Monta descrição legível da aposta
+            esc = sd.get("escolha")
+            if esc == "A":
+                desc = f"Vitória {sd.get('time_a') or 'Time A'}"
+            elif esc == "B":
+                desc = f"Vitória {sd.get('time_b') or 'Time B'}"
+            elif esc == "X":
+                desc = "Empate"
+            else:
+                desc = esc or "Indefinido"
+
+            sd["descricao"] = desc
+
+            # formata data
             dh = sd.get("data_hora")
             if isinstance(dh, datetime):
-                sd["data_hora"] = dh.isoformat()
-            
+                sd["data_hora"] = dh.strftime("%Y-%m-%d %H:%M")
+
             selections.append(sd)
 
         bdict["selections"] = selections
@@ -835,4 +836,5 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
