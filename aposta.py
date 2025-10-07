@@ -282,43 +282,62 @@ def dashboard():
 @app.route('/aposta_multipla', methods=['POST'])
 def aposta_multipla():
     try:
-        data = request.get_json()  # <- pega JSON do fetch
+        data = request.get_json()
         selecoes = data.get('selecoes', [])
         valor = float(data.get('valor', 0))
-        usuario_id = session.get('usuario_id')  # assume que você tem login
+        usuario_id = session.get('usuario_id')
 
         if not selecoes or valor <= 0:
             return jsonify({"ok": False, "erro": "Seleções ou valor inválido"})
 
+        # calcula odd total
         retorno_total = 1.0
         for s in selecoes:
             retorno_total *= float(s['odd'])
 
         data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # INSERIR CADA SELEÇÃO NO DB
-        conn = get_db_connection()  # sua função de conexão
+        conn = get_db_connection()
         cur = conn.cursor()
+
+        # INSERE APOSTA PRINCIPAL
         cur.execute(
-            "INSERT INTO bets (usuario_id, valor, retorno_potencial, data_hora) VALUES (%s, %s, %s, %s) RETURNING id",
-            (usuario_id, valor, valor*retorno_total, data_hora)
+            """
+            INSERT INTO bets (usuario_id, stake, potential, status, data_hora)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (usuario_id, valor, valor * retorno_total, "pendente", data_hora)
         )
         bet_id = cur.fetchone()[0]
 
+        # INSERE AS SELEÇÕES VINCULADAS
         for s in selecoes:
             cur.execute(
-                """INSERT INTO bet_selections 
-                   (bet_id, jogo_id, tipo, escolha, odd, status, time_a, time_b, data_hora) 
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (bet_id, s['jogo'], s['tipo'], s['time'], s['odd'], "pendente",
-                 s.get('time_a', s['time']), s.get('time_b', ''), data_hora)
+                """
+                INSERT INTO bet_selections
+                (bet_id, jogo_id, tipo, escolha, odd, status, time_a, time_b, data_hora)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    bet_id,
+                    s['jogo'],
+                    s.get('tipo', 'principal'),
+                    s['time'],
+                    s['odd'],
+                    "pendente",
+                    s.get('time_a', s['time']),
+                    s.get('time_b', ''),
+                    data_hora,
+                )
             )
 
         conn.commit()
         cur.close()
         conn.close()
 
-        return jsonify({"ok": True, "retorno": valor*retorno_total})
+        return jsonify({"ok": True, "retorno": valor * retorno_total})
+
     except Exception as e:
         return jsonify({"ok": False, "erro": str(e)})
 
@@ -845,6 +864,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
