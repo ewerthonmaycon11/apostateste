@@ -317,23 +317,23 @@ def aposta_multipla():
         # INSERE AS SELEÇÕES VINCULADAS
         for s in selecoes:
             cur.execute(
-            """
-            INSERT INTO bet_selections
-            (bet_id, jogo_id, tipo, escolha, odd, resultado, time_a, time_b, data_hora)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """,
-            (
-                bet_id,
-                s['jogo'],
-                s.get('tipo', 'principal'),
-                s['time'],
-                s['odd'],
-                "pendente",
-                s.get('time_a', s['time']),
-                s.get('time_b', ''),
-                data_hora,
+                """
+                INSERT INTO bet_selections
+                (bet_id, jogo_id, tipo, escolha, odd, resultado, time_a, time_b, data_hora)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    bet_id,
+                    s['jogo'],
+                    s.get('tipo', 'principal'),
+                    s['time'],
+                    s['odd'],
+                    "pendente",
+                    s.get('time_a', s['time']),
+                    s.get('time_b', ''),
+                    data_hora,
+                )
             )
-        )
 
 
         conn.commit()
@@ -868,6 +868,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
