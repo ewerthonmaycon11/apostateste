@@ -290,7 +290,7 @@ def aposta_multipla():
         if not selecoes or valor <= 0:
             return jsonify({"ok": False, "erro": "Seleções ou valor inválido"})
 
-        # calcula odd total
+        # Calcula a odd total multiplicando todas as odds
         retorno_total = 1.0
         for s in selecoes:
             retorno_total *= float(s['odd'])
@@ -300,7 +300,7 @@ def aposta_multipla():
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # INSERE APOSTA PRINCIPAL
+        # === INSERE APOSTA PRINCIPAL ===
         cur.execute(
             """
             INSERT INTO bets (usuario_id, stake, total_odd, potential, status, criado_em)
@@ -310,11 +310,9 @@ def aposta_multipla():
             (usuario_id, valor, retorno_total, valor * retorno_total, "pendente", data_hora)
         )
 
-            (usuario_id, valor, valor * retorno_total, "pendente", data_hora)
-        )
         bet_id = cur.fetchone()[0]
 
-        # INSERE AS SELEÇÕES VINCULADAS
+        # === INSERE AS SELEÇÕES VINCULADAS ===
         for s in selecoes:
             cur.execute(
                 """
@@ -335,15 +333,18 @@ def aposta_multipla():
                 )
             )
 
-
         conn.commit()
         cur.close()
         conn.close()
 
-        return jsonify({"ok": True, "retorno": valor * retorno_total})
+        return jsonify({
+            "ok": True,
+            "retorno": round(valor * retorno_total, 2)
+        })
 
     except Exception as e:
         return jsonify({"ok": False, "erro": str(e)})
+
 
 
 @app.route("/jogo/<int:jogo_id>")
@@ -868,6 +869,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
