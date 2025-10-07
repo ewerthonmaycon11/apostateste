@@ -303,10 +303,13 @@ def aposta_multipla():
         # INSERE APOSTA PRINCIPAL
         cur.execute(
             """
-            INSERT INTO bets (usuario_id, stake, potential, status, data_hora)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO bets (usuario_id, stake, total_odd, potential, status, criado_em)
+            VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
+            (usuario_id, valor, retorno_total, valor * retorno_total, "pendente", data_hora)
+        )
+
             (usuario_id, valor, valor * retorno_total, "pendente", data_hora)
         )
         bet_id = cur.fetchone()[0]
@@ -314,23 +317,24 @@ def aposta_multipla():
         # INSERE AS SELEÇÕES VINCULADAS
         for s in selecoes:
             cur.execute(
-                """
-                INSERT INTO bet_selections
-                (bet_id, jogo_id, tipo, escolha, odd, status, time_a, time_b, data_hora)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    bet_id,
-                    s['jogo'],
-                    s.get('tipo', 'principal'),
-                    s['time'],
-                    s['odd'],
-                    "pendente",
-                    s.get('time_a', s['time']),
-                    s.get('time_b', ''),
-                    data_hora,
-                )
+            """
+            INSERT INTO bet_selections
+            (bet_id, jogo_id, tipo, escolha, odd, resultado, time_a, time_b, data_hora)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                bet_id,
+                s['jogo'],
+                s.get('tipo', 'principal'),
+                s['time'],
+                s['odd'],
+                "pendente",
+                s.get('time_a', s['time']),
+                s.get('time_b', ''),
+                data_hora,
             )
+        )
+
 
         conn.commit()
         cur.close()
@@ -864,6 +868,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
