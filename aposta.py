@@ -290,15 +290,31 @@ def aposta_multipla():
         if not selecoes or valor <= 0:
             return jsonify({"ok": False, "erro": "Seleções ou valor inválido"})
 
-        # Calcula a odd total multiplicando todas as odds
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # === VERIFICA SALDO ===
+        cur.execute("SELECT saldo FROM usuarios WHERE id=%s", (usuario_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({"ok": False, "erro": "Usuário não encontrado."})
+
+        saldo_atual = float(row[0])
+        if saldo_atual < valor:
+            conn.close()
+            return jsonify({"ok": False, "erro": "Saldo insuficiente para essa aposta."})
+
+        # === DEBITA SALDO ===
+        novo_saldo = saldo_atual - valor
+        cur.execute("UPDATE usuarios SET saldo=%s WHERE id=%s", (novo_saldo, usuario_id))
+
+        # === CALCULA ODD TOTAL ===
         retorno_total = 1.0
         for s in selecoes:
             retorno_total *= float(s['odd'])
 
         data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        conn = get_db_connection()
-        cur = conn.cursor()
 
         # === INSERE APOSTA PRINCIPAL ===
         cur.execute(
@@ -309,10 +325,9 @@ def aposta_multipla():
             """,
             (usuario_id, valor, retorno_total, valor * retorno_total, "pendente", data_hora)
         )
-
         bet_id = cur.fetchone()[0]
 
-        # === INSERE AS SELEÇÕES VINCULADAS ===
+        # === INSERE AS SELEÇÕES ===
         for s in selecoes:
             cur.execute(
                 """
@@ -339,11 +354,13 @@ def aposta_multipla():
 
         return jsonify({
             "ok": True,
-            "retorno": round(valor * retorno_total, 2)
+            "retorno": round(valor * retorno_total, 2),
+            "novo_saldo": round(novo_saldo, 2)
         })
 
     except Exception as e:
         return jsonify({"ok": False, "erro": str(e)})
+
 
 
 
@@ -832,12 +849,13 @@ def admin_resolve_bet(bet_id):
         flash("Aposta já processada.", "info")
         return redirect(url_for("admin_dashboard"))
     if action == "ganho":
-        c.execute("UPDATE usuarios SET saldo = saldo + %s WHERE id=%s", (bet["potential"], bet["usuario_id"]))
-        c.execute("UPDATE bets SET status='ganho' WHERE id=%s", (bet_id,))
-        flash("Aposta marcada como GANHA e valor creditado ao usuário.", "success")
-    else:
-        c.execute("UPDATE bets SET status='perdido' WHERE id=%s", (bet_id,))
-        flash("Aposta marcada como PERDIDA.", "info")
+    c.execute("UPDATE usuarios SET saldo = saldo + %s WHERE id=%s", (bet["potential"], bet["usuario_id"]))
+    c.execute("UPDATE bets SET status='ganho' WHERE id=%s", (bet_id,))
+    flash("Aposta marcada como GANHA e valor creditado ao usuário.", "success")
+else:
+    c.execute("UPDATE bets SET status='perdido' WHERE id=%s", (bet_id,))
+    flash("Aposta marcada como PERDIDA.", "info")
+
     conn.commit()
     conn.close()
     return redirect(url_for("admin_dashboard"))
@@ -869,6 +887,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
