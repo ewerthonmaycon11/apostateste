@@ -849,12 +849,12 @@ def admin_resolve_bet(bet_id):
         flash("Aposta já processada.", "info")
         return redirect(url_for("admin_dashboard"))
     if action == "ganho":
-    c.execute("UPDATE usuarios SET saldo = saldo + %s WHERE id=%s", (bet["potential"], bet["usuario_id"]))
-    c.execute("UPDATE bets SET status='ganho' WHERE id=%s", (bet_id,))
-    flash("Aposta marcada como GANHA e valor creditado ao usuário.", "success")
-else:
-    c.execute("UPDATE bets SET status='perdido' WHERE id=%s", (bet_id,))
-    flash("Aposta marcada como PERDIDA.", "info")
+        c.execute("UPDATE usuarios SET saldo = saldo + %s WHERE id=%s", (bet["potential"], bet["usuario_id"]))
+        c.execute("UPDATE bets SET status='ganho' WHERE id=%s", (bet_id,))
+        flash("Aposta marcada como GANHA e valor creditado ao usuário.", "success")
+    else:
+        c.execute("UPDATE bets SET status='perdido' WHERE id=%s", (bet_id,))
+        flash("Aposta marcada como PERDIDA.", "info")
 
     conn.commit()
     conn.close()
@@ -887,6 +887,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
