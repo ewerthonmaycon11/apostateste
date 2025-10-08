@@ -636,33 +636,33 @@ def admin_dashboard():
 
     # ---------------- Função auxiliar para montar seleções ----------------
     def carregar_selecoes(bet_id):
-    c.execute("""
-        SELECT * FROM bet_selections
-        WHERE bet_id = %s
-        ORDER BY id
-    """, (bet_id,))
-
-    selecoes = []
-    for s in c.fetchall():
-        sd = row_to_dict(s)
-        opcao = sd.get("escolha")
-
-        # ⚡ mesma lógica do histórico
-        if opcao == "A":
-            sd["descricao"] = f"Vitória {sd.get('time_a','Time A')}"
-        elif opcao == "B":
-            sd["descricao"] = f"Vitória {sd.get('time_b','Time B')}"
-        elif opcao == "X" or (isinstance(opcao, str) and opcao.lower() == "empate"):
-            sd["descricao"] = "Empate"
-        else:
-            sd["descricao"] = sd.get("tipo") or "Indefinido"
-
-        # Ajusta data/hora (caso exista no registro da seleção)
-        dh = sd.get("data_hora")
-        if isinstance(dh, datetime):
-            sd["data_hora"] = dh.strftime("%d/%m %H:%M")
-
-        selecoes.append(sd)
+        c.execute("""
+            SELECT * FROM bet_selections
+            WHERE bet_id = %s
+            ORDER BY id
+        """, (bet_id,))
+    
+        selecoes = []
+        for s in c.fetchall():
+            sd = row_to_dict(s)
+            opcao = sd.get("escolha")
+    
+            # ⚡ mesma lógica do histórico
+            if opcao == "A":
+                sd["descricao"] = f"Vitória {sd.get('time_a','Time A')}"
+            elif opcao == "B":
+                sd["descricao"] = f"Vitória {sd.get('time_b','Time B')}"
+            elif opcao == "X" or (isinstance(opcao, str) and opcao.lower() == "empate"):
+                sd["descricao"] = "Empate"
+            else:
+                sd["descricao"] = sd.get("tipo") or "Indefinido"
+    
+            # Ajusta data/hora (caso exista no registro da seleção)
+            dh = sd.get("data_hora")
+            if isinstance(dh, datetime):
+                sd["data_hora"] = dh.strftime("%d/%m %H:%M")
+    
+            selecoes.append(sd)
 
     return selecoes
 
@@ -880,6 +880,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
