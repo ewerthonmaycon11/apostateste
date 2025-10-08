@@ -625,7 +625,7 @@ def admin_dashboard():
     conn = get_conn()
     c = conn.cursor()
 
-    # ---------------- Transações Pendentes ----------------
+    # ---------------- Transações ----------------
     c.execute("""
         SELECT t.*, u.nome as usuario_nome
         FROM transacoes t
@@ -655,11 +655,25 @@ def admin_dashboard():
         sels = []
         for s in c.fetchall():
             sd = row_to_dict(s)
-            sd["descricao"] = sd.get("escolha") or "Indefinido"
+
+            # Traduz a escolha pro nome do time real
+            opcao = sd.get("escolha")
+            if opcao == "A":
+                sd["descricao"] = sd.get("time_a") or "Time A"
+            elif opcao == "B":
+                sd["descricao"] = sd.get("time_b") or "Time B"
+            elif opcao == "Empate":
+                sd["descricao"] = "Empate"
+            else:
+                sd["descricao"] = opcao or "Indefinido"
+
+            # Ajusta data/hora
             dh = sd.get("data_hora")
             if isinstance(dh, datetime):
                 sd["data_hora"] = dh.strftime("%d/%m %H:%M")
+
             sels.append(sd)
+
         bdict["selections"] = sels
         apostas_pendentes.append(bdict)
 
@@ -684,14 +698,29 @@ def admin_dashboard():
         sels = []
         for s in c.fetchall():
             sd = row_to_dict(s)
-            sd["descricao"] = sd.get("escolha") or "Indefinido"
+
+            # Traduz a escolha pro nome do time real
+            opcao = sd.get("escolha")
+            if opcao == "A":
+                sd["descricao"] = sd.get("time_a") or "Time A"
+            elif opcao == "B":
+                sd["descricao"] = sd.get("time_b") or "Time B"
+            elif opcao == "Empate":
+                sd["descricao"] = "Empate"
+            else:
+                sd["descricao"] = opcao or "Indefinido"
+
+            # Ajusta data/hora
             dh = sd.get("data_hora")
             if isinstance(dh, datetime):
                 sd["data_hora"] = dh.strftime("%d/%m %H:%M")
+
             sels.append(sd)
+
         bdict["selections"] = sels
         apostas_finalizadas.append(bdict)
 
+    # ---------------- Renderiza template ----------------
     conn.close()
     return render_template(
         "admin_dashboard.html",
@@ -699,6 +728,7 @@ def admin_dashboard():
         apostas_pendentes=apostas_pendentes,
         apostas_finalizadas=apostas_finalizadas,
     )
+
 
 
 @app.route("/admin/approve_transacao/<int:tid>")
@@ -876,6 +906,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
