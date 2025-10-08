@@ -2,191 +2,259 @@
 {% block title %}Painel Admin{% endblock %}
 
 {% block conteudo %}
-<h2 class="text-orange mb-4">Painel do Admin</h2>
+<div class="container py-4">
 
-<!-- Adicionar Jogo -->
-<div class="card mb-4 p-3 shadow-sm">
-    <h4 class="mb-3">Adicionar Jogo</h4>
-    <form method="POST" action="{{ url_for('admin_futebol') }}">
-        <div class="row mb-2">
-            <div class="col">
-                <input class="form-control" name="time_a" placeholder="Time 1" required>
-            </div>
-            <div class="col">
-                <input class="form-control" name="time_b" placeholder="Time 2" required>
-            </div>
-        </div>
-        <div class="row mb-2">
-            <div class="col">
-                <input class="form-control" name="odd_a" type="number" step="0.01" placeholder="Odd Time 1" required>
-            </div>
-            <div class="col">
-                <input class="form-control" name="odd_x" type="number" step="0.01" placeholder="Odd Empate" required>
-            </div>
-            <div class="col">
-                <input class="form-control" name="odd_b" type="number" step="0.01" placeholder="Odd Time 2" required>
-            </div>
-        </div>
-        <div class="row mb-2">
-            <div class="col">
-                <input class="form-control" name="data_hora" type="datetime-local" required>
-            </div>
-        </div>
-        <button class="btn btn-primary mt-2" type="submit">Adicionar Jogo</button>
-    </form>
-</div>
+    <h2 class="text-orange fw-bold mb-4">⚙️ Painel do Admin</h2>
 
-<!-- Aprovar/Reprovar Depósitos e Saques -->
-<div class="card mb-4 p-3 shadow-sm">
-    <h4 class="mb-3">Aprovar/Reprovar Depósitos e Saques</h4>
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Usuário</th>
-                <th>Tipo</th>
-                <th>Valor</th>
-                <th>Status</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for transacao in transacoes %}
-            <tr>
-                <td>{{ transacao.usuario_nome or 'Desconhecido' }}</td>
-                <td>{{ transacao.tipo }}</td>
-                <td>R$ {{ "%.2f"|format(transacao.valor) }}</td>
-                <td>{{ transacao.status }}</td>
-                <td>
-                    {% if transacao.status == 'pendente' %}
-                        <a href="{{ url_for('admin_approve_transacao', tid=transacao.id) }}" class="btn btn-success btn-sm">Aprovar</a>
-                        <a href="{{ url_for('admin_reject_transacao', tid=transacao.id) }}" class="btn btn-danger btn-sm">Reprovar</a>
-                    {% else %}
-                        <span class="text-muted">Concluído</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" class="text-center text-muted">Nenhuma transação pendente</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+    <!-- Adicionar Jogo -->
+    <div class="card mb-4 border-0 shadow-sm rounded-4">
+        <div class="card-header bg-orange text-white fw-semibold">Adicionar Jogo</div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin_futebol') }}">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <input class="form-control" name="time_a" placeholder="Time 1" required>
+                    </div>
+                    <div class="col-md-6">
+                        <input class="form-control" name="time_b" placeholder="Time 2" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <input class="form-control" name="odd_a" type="number" step="0.01" placeholder="Odd Time 1" required>
+                    </div>
+                    <div class="col">
+                        <input class="form-control" name="odd_x" type="number" step="0.01" placeholder="Odd Empate" required>
+                    </div>
+                    <div class="col">
+                        <input class="form-control" name="odd_b" type="number" step="0.01" placeholder="Odd Time 2" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <input class="form-control" name="data_hora" type="datetime-local" required>
+                    </div>
+                </div>
+                <button class="btn btn-orange w-100 fw-semibold" type="submit">Adicionar Jogo</button>
+            </form>
+        </div>
+    </div>
 
-<!-- Apostas Pendentes -->
-<div class="card mb-4 p-3 shadow-sm">
-    <h4 class="mb-3">Apostas Pendentes</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Usuário</th>
-                <th>Stake</th>
-                <th>Potencial</th>
-                <th>O que apostou</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for aposta in apostas_pendentes %}
-            <tr>
-                <td>{{ aposta.id }}</td>
-                <td>{{ aposta.usuario_nome or 'Desconhecido' }}</td>
-                <td>R$ {{ "%.2f"|format(aposta.stake) }}</td>
-                <td>R$ {{ "%.2f"|format(aposta.potential) }}</td>
-                <td>
-                    <ul class="list-unstyled mb-0">
-                        {% for sel in aposta.selections %}
-                        <li>
-                            <small class="d-block text-muted">
-                                Jogo: {{ sel.time_a }} vs {{ sel.time_b }} ({{ sel.data_hora }})
-                            </small>
-                            {% if sel.tipo == 'principal' %}
-                                <strong>Principal:</strong>
-                                {% if sel.escolha == 'A' %}
-                                    Vitória {{ sel.time_a }}
-                                {% elif sel.escolha == 'X' %}
-                                    Empate
+    <!-- Aprovar/Reprovar Depósitos e Saques -->
+    <div class="card mb-4 border-0 shadow-sm rounded-4">
+        <div class="card-header bg-orange text-white fw-semibold">Aprovar / Reprovar Depósitos e Saques</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transacao in transacoes %}
+                        <tr>
+                            <td>{{ transacao.usuario_nome or 'Desconhecido' }}</td>
+                            <td>{{ transacao.tipo }}</td>
+                            <td>R$ {{ "%.2f"|format(transacao.valor) }}</td>
+                            <td>
+                                {% if transacao.status == 'pendente' %}
+                                    <span class="badge bg-warning text-dark px-3 py-2">Pendente</span>
+                                {% elif transacao.status == 'aprovado' %}
+                                    <span class="badge bg-success px-3 py-2">Aprovado</span>
                                 {% else %}
-                                    Vitória {{ sel.time_b }}
+                                    <span class="badge bg-danger px-3 py-2">Reprovado</span>
                                 {% endif %}
-                                (Odd: {{ sel.odd }})
-                            {% else %}
-                                <strong>Extra:</strong> {{ sel.escolha }} (Odd: {{ sel.odd }})
-                            {% endif %}
-                        </li>
+                            </td>
+                            <td>
+                                {% if transacao.status == 'pendente' %}
+                                    <a href="{{ url_for('admin_approve_transacao', tid=transacao.id) }}" class="btn btn-success btn-sm me-1">Aprovar</a>
+                                    <a href="{{ url_for('admin_reject_transacao', tid=transacao.id) }}" class="btn btn-danger btn-sm">Reprovar</a>
+                                {% else %}
+                                    <span class="text-muted small">Concluído</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted">Nenhuma transação pendente</td></tr>
                         {% endfor %}
-                    </ul>
-                </td>
-                <td>
-                    <form method="POST" action="{{ url_for('admin_resolve_bet', bet_id=aposta.id) }}" class="d-inline">
-                        <input type="hidden" name="action" value="ganho">
-                        <button type="submit" class="btn btn-success btn-sm mb-1">Vitória</button>
-                    </form>
-                    <form method="POST" action="{{ url_for('admin_resolve_bet', bet_id=aposta.id) }}" class="d-inline">
-                        <input type="hidden" name="action" value="perdido">
-                        <button type="submit" class="btn btn-danger btn-sm">Derrota</button>
-                    </form>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="6" class="text-center text-muted">Nenhuma aposta pendente</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apostas Pendentes -->
+    <div class="card mb-4 border-0 shadow-sm rounded-4">
+        <div class="card-header bg-orange text-white fw-semibold">Apostas Pendentes</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuário</th>
+                            <th>Stake</th>
+                            <th>Potencial</th>
+                            <th>O que apostou</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aposta in apostas_pendentes %}
+                        <tr>
+                            <td class="fw-bold">#{{ aposta.id }}</td>
+                            <td>{{ aposta.usuario_nome or 'Desconhecido' }}</td>
+                            <td>R$ {{ "%.2f"|format(aposta.stake) }}</td>
+                            <td class="text-success fw-semibold">R$ {{ "%.2f"|format(aposta.potential) }}</td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for sel in aposta.selections %}
+                                    <li class="border-bottom pb-1 mb-1">
+                                        <small class="d-block text-muted">
+                                            {{ sel.time_a }} vs {{ sel.time_b }} — {{ sel.data_hora }}
+                                        </small>
+                                        <span class="fw-semibold">
+                                            {% if sel.tipo == 'principal' %}
+                                                Principal:
+                                                {% if sel.escolha == 'A' %}
+                                                    <span class="text-orange">Vitória {{ sel.time_a }}</span>
+                                                {% elif sel.escolha == 'X' %}
+                                                    <span class="text-orange">Empate</span>
+                                                {% else %}
+                                                    <span class="text-orange">Vitória {{ sel.time_b }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                Extra: <span class="text-orange">{{ sel.escolha }}</span>
+                                            {% endif %}
+                                            (Odd: {{ sel.odd }})
+                                        </span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('admin_resolve_bet', bet_id=aposta.id) }}" class="d-inline">
+                                    <input type="hidden" name="action" value="ganho">
+                                    <button type="submit" class="btn btn-outline-success btn-sm mb-1 action-btn">🏆 Vitória</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin_resolve_bet', bet_id=aposta.id) }}" class="d-inline">
+                                    <input type="hidden" name="action" value="perdido">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm action-btn">💀 Derrota</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center text-muted">Nenhuma aposta pendente</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apostas Finalizadas -->
+    <div class="card mb-4 border-0 shadow-sm rounded-4">
+        <div class="card-header bg-dark text-white fw-semibold">Apostas Finalizadas</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuário</th>
+                            <th>Stake</th>
+                            <th>Potencial</th>
+                            <th>O que apostou</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aposta in apostas_finalizadas %}
+                        <tr>
+                            <td class="fw-bold">#{{ aposta.id }}</td>
+                            <td>{{ aposta.usuario_nome or 'Desconhecido' }}</td>
+                            <td>R$ {{ "%.2f"|format(aposta.stake) }}</td>
+                            <td class="text-success fw-semibold">R$ {{ "%.2f"|format(aposta.potential) }}</td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for sel in aposta.selections %}
+                                    <li class="border-bottom pb-1 mb-1">
+                                        <small class="d-block text-muted">
+                                            {{ sel.time_a }} vs {{ sel.time_b }} — {{ sel.data_hora }}
+                                        </small>
+                                        <span class="fw-semibold">
+                                            {% if sel.tipo == 'principal' %}
+                                                Principal:
+                                                {% if sel.escolha == 'A' %}
+                                                    <span class="text-orange">Vitória {{ sel.time_a }}</span>
+                                                {% elif sel.escolha == 'X' %}
+                                                    <span class="text-orange">Empate</span>
+                                                {% else %}
+                                                    <span class="text-orange">Vitória {{ sel.time_b }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                Extra: <span class="text-orange">{{ sel.escolha }}</span>
+                                            {% endif %}
+                                            (Odd: {{ sel.odd }})
+                                        </span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>
+                                {% if aposta.status == 'ganho' %}
+                                    <span class="badge bg-success px-3 py-2">Ganho</span>
+                                {% elif aposta.status == 'perdido' %}
+                                    <span class="badge bg-danger px-3 py-2">Perdido</span>
+                                {% else %}
+                                    <span class="badge bg-secondary px-3 py-2">{{ aposta.status|capitalize }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center text-muted">Nenhuma aposta finalizada</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<!-- Apostas Finalizadas -->
-<div class="card mb-4 p-3 shadow-sm">
-    <h4 class="mb-3">Apostas Finalizadas</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Usuário</th>
-                <th>Stake</th>
-                <th>Potencial</th>
-                <th>O que apostou</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for aposta in apostas_finalizadas %}
-            <tr>
-                <td>{{ aposta.id }}</td>
-                <td>{{ aposta.usuario_nome or 'Desconhecido' }}</td>
-                <td>R$ {{ "%.2f"|format(aposta.stake) }}</td>
-                <td>R$ {{ "%.2f"|format(aposta.potential) }}</td>
-                <td>
-                    <ul class="list-unstyled mb-0">
-                        {% for sel in aposta.selections %}
-                        <li>
-                            <small class="d-block text-muted">
-                                Jogo: {{ sel.time_a }} vs {{ sel.time_b }} ({{ sel.data_hora }})
-                            </small>
-                            {% if sel.tipo == 'principal' %}
-                                <strong>Principal:</strong>
-                                {% if sel.escolha == 'A' %}
-                                    Vitória {{ sel.time_a }}
-                                {% elif sel.escolha == 'X' %}
-                                    Empate
-                                {% else %}
-                                    Vitória {{ sel.time_b }}
-                                {% endif %}
-                                (Odd: {{ sel.odd }})
-                            {% else %}
-                                <strong>Extra:</strong> {{ sel.escolha }} (Odd: {{ sel.odd }})
-                            {% endif %}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </td>
-                <td>{{ aposta.status|capitalize }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="6" class="text-center text-muted">Nenhuma aposta finalizada</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<style>
+    .bg-orange { background-color: #ff7b00 !important; }
+    .text-orange { color: #ff7b00 !important; }
+    .btn-orange {
+        background-color: #ff7b00;
+        color: white;
+        border: none;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-orange:hover {
+        background-color: #e86f00;
+        color: #fff;
+    }
+    .action-btn.active {
+        background-color: #ff7b00 !important;
+        color: white !important;
+        border-color: #ff7b00 !important;
+    }
+</style>
+
+<script>
+    // Deixa o botão clicado marcado em laranja até atualizar a página
+    document.querySelectorAll('.action-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+</script>
 
 {% endblock %}
