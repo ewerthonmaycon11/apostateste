@@ -637,19 +637,18 @@ def admin_dashboard():
     # ---------------- Função auxiliar para montar seleções ----------------
     def carregar_selecoes(bet_id):
         c.execute("""
-            SELECT bs.*, j.time_a, j.time_b, j.data_hora
-            FROM bet_selections bs
-            LEFT JOIN jogos j ON bs.jogo_id = j.id
-            WHERE bs.bet_id = %s
-            ORDER BY bs.id
+            SELECT *
+            FROM bet_selections
+            WHERE bet_id = %s
+            ORDER BY id
         """, (bet_id,))
-    
+
         selecoes = []
         for s in c.fetchall():
             sd = row_to_dict(s)
             opcao = sd.get("escolha")
-    
-            # ⚡ mesma lógica do histórico
+
+            # mesma lógica do histórico
             if opcao == "A":
                 sd["descricao"] = f"Vitória {sd.get('time_a','Time A')}"
             elif opcao == "B":
@@ -658,15 +657,22 @@ def admin_dashboard():
                 sd["descricao"] = "Empate"
             else:
                 sd["descricao"] = sd.get("tipo") or "Indefinido"
-    
-            # Ajusta data/hora (caso exista no registro da seleção)
+
+            # odd como float
+            if sd.get("odd") is not None:
+                sd["odd"] = float(sd["odd"])
+
+            # resultado
+            sd["resultado"] = sd.get("resultado") or "Pendente"
+
+            # ajusta data/hora se existir
             dh = sd.get("data_hora")
             if isinstance(dh, datetime):
                 sd["data_hora"] = dh.strftime("%d/%m %H:%M")
-    
+
             selecoes.append(sd)
-    
-        return selecoes  # ✅ retorna a lista corretamente
+
+        return selecoes
 
     # ---------------- Apostas Pendentes ----------------
     c.execute("""
@@ -881,6 +887,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
