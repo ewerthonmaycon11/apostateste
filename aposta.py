@@ -637,9 +637,11 @@ def admin_dashboard():
     # ---------------- Função auxiliar para montar seleções ----------------
     def carregar_selecoes(bet_id):
         c.execute("""
-            SELECT * FROM bet_selections
-            WHERE bet_id = %s
-            ORDER BY id
+            SELECT bs.*, j.time_a, j.time_b, j.data_hora
+            FROM bet_selections bs
+            LEFT JOIN jogos j ON bs.jogo_id = j.id
+            WHERE bs.bet_id = %s
+            ORDER BY bs.id
         """, (bet_id,))
     
         selecoes = []
@@ -663,9 +665,8 @@ def admin_dashboard():
                 sd["data_hora"] = dh.strftime("%d/%m %H:%M")
     
             selecoes.append(sd)
-
-    return selecoes
-
+    
+        return selecoes  # ✅ retorna a lista corretamente
 
     # ---------------- Apostas Pendentes ----------------
     c.execute("""
@@ -880,6 +881,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
