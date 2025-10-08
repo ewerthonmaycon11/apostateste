@@ -634,6 +634,40 @@ def admin_dashboard():
     """)
     transacoes = [row_to_dict(r) for r in c.fetchall()]
 
+    # ---------------- Função auxiliar para montar seleções ----------------
+    def carregar_selecoes(bet_id):
+        c.execute("""
+            SELECT bs.*, j.time_a, j.time_b, j.data_hora
+            FROM bet_selections bs
+            LEFT JOIN jogos j ON bs.jogo_id = j.id
+            WHERE bs.bet_id = %s
+            ORDER BY bs.id
+        """, (bet_id,))
+
+        selecoes = []
+        for s in c.fetchall():
+            sd = row_to_dict(s)
+            opcao = sd.get("escolha")
+
+            # 🔥 Aqui está o ponto: mesma lógica do histórico do usuário 🔥
+            if opcao == "A":
+                sd["descricao"] = f"Vitória {sd.get('time_a','Time A')}"
+            elif opcao == "B":
+                sd["descricao"] = f"Vitória {sd.get('time_b','Time B')}"
+            elif opcao == "X" or opcao.lower() == "empate":
+                sd["descricao"] = "Empate"
+            else:
+                sd["descricao"] = sd.get("escolha") or "Indefinido"
+
+            # Ajusta data/hora
+            dh = sd.get("data_hora")
+            if isinstance(dh, datetime):
+                sd["data_hora"] = dh.strftime("%d/%m %H:%M")
+
+            selecoes.append(sd)
+
+        return selecoes
+
     # ---------------- Apostas Pendentes ----------------
     c.execute("""
         SELECT b.*, u.nome AS usuario_nome
@@ -645,36 +679,7 @@ def admin_dashboard():
     apostas_pendentes = []
     for b in c.fetchall():
         bdict = row_to_dict(b)
-        c.execute("""
-            SELECT bs.*, j.time_a, j.time_b, j.data_hora
-            FROM bet_selections bs
-            LEFT JOIN jogos j ON bs.jogo_id = j.id
-            WHERE bs.bet_id = %s
-            ORDER BY bs.id
-        """, (b["id"],))
-        sels = []
-        for s in c.fetchall():
-            sd = row_to_dict(s)
-
-            # Traduz a escolha pro nome do time real
-            opcao = sd.get("escolha")
-            if opcao == "A":
-                sd["descricao"] = sd.get("time_a") or "Time A"
-            elif opcao == "B":
-                sd["descricao"] = sd.get("time_b") or "Time B"
-            elif opcao == "Empate":
-                sd["descricao"] = "Empate"
-            else:
-                sd["descricao"] = opcao or "Indefinido"
-
-            # Ajusta data/hora
-            dh = sd.get("data_hora")
-            if isinstance(dh, datetime):
-                sd["data_hora"] = dh.strftime("%d/%m %H:%M")
-
-            sels.append(sd)
-
-        bdict["selections"] = sels
+        bdict["selections"] = carregar_selecoes(b["id"])
         apostas_pendentes.append(bdict)
 
     # ---------------- Apostas Finalizadas ----------------
@@ -688,39 +693,9 @@ def admin_dashboard():
     apostas_finalizadas = []
     for b in c.fetchall():
         bdict = row_to_dict(b)
-        c.execute("""
-            SELECT bs.*, j.time_a, j.time_b, j.data_hora
-            FROM bet_selections bs
-            LEFT JOIN jogos j ON bs.jogo_id = j.id
-            WHERE bs.bet_id = %s
-            ORDER BY bs.id
-        """, (b["id"],))
-        sels = []
-        for s in c.fetchall():
-            sd = row_to_dict(s)
-
-            # Traduz a escolha pro nome do time real
-            opcao = sd.get("escolha")
-            if opcao == "A":
-                sd["descricao"] = sd.get("time_a") or "Time A"
-            elif opcao == "B":
-                sd["descricao"] = sd.get("time_b") or "Time B"
-            elif opcao == "Empate":
-                sd["descricao"] = "Empate"
-            else:
-                sd["descricao"] = opcao or "Indefinido"
-
-            # Ajusta data/hora
-            dh = sd.get("data_hora")
-            if isinstance(dh, datetime):
-                sd["data_hora"] = dh.strftime("%d/%m %H:%M")
-
-            sels.append(sd)
-
-        bdict["selections"] = sels
+        bdict["selections"] = carregar_selecoes(b["id"])
         apostas_finalizadas.append(bdict)
 
-    # ---------------- Renderiza template ----------------
     conn.close()
     return render_template(
         "admin_dashboard.html",
@@ -906,6 +881,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
