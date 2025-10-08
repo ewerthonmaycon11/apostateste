@@ -645,41 +645,39 @@ for b in c.fetchall():
 
 
     # Apostas finalizadas
-    c.execute("SELECT b.*, u.nome as usuario_nome FROM bets b LEFT JOIN usuarios u ON b.usuario_id=u.id WHERE b.status!='pendente' ORDER BY b.id DESC")
-    apostas_finalizadas = []
-    for b in c.fetchall():
-        bdict = row_to_dict(b)
-        c.execute("""
-            SELECT bs.*, j.time_a, j.time_b, j.data_hora
-            FROM bet_selections bs
-            LEFT JOIN jogos j ON bs.jogo_id=j.id
-            WHERE bs.bet_id=%s
-            ORDER BY bs.id
-        """, (b["id"],))
-        sels = []
-        for s in c.fetchall():
-            sd = row_to_dict(s)
+    c.execute("""
+    SELECT b.*, u.nome AS usuario_nome
+    FROM bets b
+    JOIN usuarios u ON b.usuario_id = u.id
+    WHERE b.status IN ('ganhou', 'perdeu')
+    ORDER BY b.id DESC
+""")
+apostas_finalizadas = []
+for b in c.fetchall():
+    bdict = row_to_dict(b)
+    c.execute("""
+        SELECT bs.*, j.time_a, j.time_b, j.data_hora
+        FROM bet_selections bs
+        LEFT JOIN jogos j ON bs.jogo_id = j.id
+        WHERE bs.bet_id = %s
+        ORDER BY bs.id
+    """, (b["id"],))
+    sels = []
+    for s in c.fetchall():
+        sd = row_to_dict(s)
 
-            esc = sd.get("escolha")
-            if esc == "A":
-                desc = f"Vitória {sd.get('time_a') or 'Time A'}"
-            elif esc == "B":
-                desc = f"Vitória {sd.get('time_b') or 'Time B'}"
-            elif esc == "X":
-                desc = "Empate"
-            else:
-                desc = esc or "Indefinido"
+        # Mostra escolha real
+        sd["descricao"] = sd.get("escolha") or "Indefinido"
 
-            sd["descricao"] = desc
+        # Ajusta data/hora
+        dh = sd.get("data_hora")
+        if isinstance(dh, datetime):
+            sd["data_hora"] = dh.strftime("%d/%m %H:%M")
 
-            dh = sd.get("data_hora")
-            if isinstance(dh, datetime):
-                sd["data_hora"] = dh.strftime("%Y-%m-%d %H:%M")
+        sels.append(sd)
 
-            sels.append(sd)
-
-        bdict["selections"] = sels
-        apostas_finalizadas.append(bdict)
+    bdict["selections"] = sels
+    apostas_finalizadas.append(bdict)
 
     conn.close()
     return render_template(
@@ -865,6 +863,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
