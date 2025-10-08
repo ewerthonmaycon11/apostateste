@@ -636,37 +636,36 @@ def admin_dashboard():
 
     # ---------------- Função auxiliar para montar seleções ----------------
     def carregar_selecoes(bet_id):
-        c.execute("""
-            SELECT bs.*, j.time_a, j.time_b, j.data_hora
-            FROM bet_selections bs
-            LEFT JOIN jogos j ON bs.jogo_id = j.id
-            WHERE bs.bet_id = %s
-            ORDER BY bs.id
-        """, (bet_id,))
+    c.execute("""
+        SELECT * FROM bet_selections
+        WHERE bet_id = %s
+        ORDER BY id
+    """, (bet_id,))
 
-        selecoes = []
-        for s in c.fetchall():
-            sd = row_to_dict(s)
-            opcao = sd.get("escolha")
+    selecoes = []
+    for s in c.fetchall():
+        sd = row_to_dict(s)
+        opcao = sd.get("escolha")
 
-            # 🔥 Aqui está o ponto: mesma lógica do histórico do usuário 🔥
-            if opcao == "A":
-                sd["descricao"] = f"Vitória {sd.get('time_a','Time A')}"
-            elif opcao == "B":
-                sd["descricao"] = f"Vitória {sd.get('time_b','Time B')}"
-            elif opcao == "X" or opcao.lower() == "empate":
-                sd["descricao"] = "Empate"
-            else:
-                sd["descricao"] = sd.get("escolha") or "Indefinido"
+        # ⚡ mesma lógica do histórico
+        if opcao == "A":
+            sd["descricao"] = f"Vitória {sd.get('time_a','Time A')}"
+        elif opcao == "B":
+            sd["descricao"] = f"Vitória {sd.get('time_b','Time B')}"
+        elif opcao == "X" or (isinstance(opcao, str) and opcao.lower() == "empate"):
+            sd["descricao"] = "Empate"
+        else:
+            sd["descricao"] = sd.get("tipo") or "Indefinido"
 
-            # Ajusta data/hora
-            dh = sd.get("data_hora")
-            if isinstance(dh, datetime):
-                sd["data_hora"] = dh.strftime("%d/%m %H:%M")
+        # Ajusta data/hora (caso exista no registro da seleção)
+        dh = sd.get("data_hora")
+        if isinstance(dh, datetime):
+            sd["data_hora"] = dh.strftime("%d/%m %H:%M")
 
-            selecoes.append(sd)
+        selecoes.append(sd)
 
-        return selecoes
+    return selecoes
+
 
     # ---------------- Apostas Pendentes ----------------
     c.execute("""
@@ -881,6 +880,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
