@@ -617,23 +617,45 @@ def sacar():
 
 
 # ------------------ ADMIN GERAL ------------------
+@app.route("/admin_dashboard")
+def admin_dashboard():
+    if not session.get("usuario_id") or session.get("usuario_nome") != "admin":
+        return redirect(url_for("login"))
+
+    conn = get_conn()
+    c = conn.cursor()
+
+    # Transações pendentes
+    c.execute("SELECT t.*, u.nome as usuario_nome FROM transacoes t LEFT JOIN usuarios u ON t.usuario_id=u.id ORDER BY t.id DESC")
+    transacoes = [row_to_dict(r) for r in c.fetchall()]
+
+    # Apostas pendentes
+    # ---------------- Apostas Pendentes ----------------
+c.execute("""
+    SELECT b.*, u.nome AS usuario_nome
+    FROM bets b
+    JOIN usuarios u ON b.usuario_id = u.id
+    WHERE b.status = 'pendente'
+    ORDER BY b.id DESC
+""")
+apostas_pendentes = []
 for b in c.fetchall():
     bdict = row_to_dict(b)
     c.execute("""
         SELECT bs.*, j.time_a, j.time_b, j.data_hora
         FROM bet_selections bs
-        LEFT JOIN jogos j ON bs.jogo_id=j.id
-        WHERE bs.bet_id=%s
+        LEFT JOIN jogos j ON bs.jogo_id = j.id
+        WHERE bs.bet_id = %s
         ORDER BY bs.id
     """, (b["id"],))
     sels = []
     for s in c.fetchall():
         sd = row_to_dict(s)
 
-        # Mostra a escolha real do usuário (ex: "Sport", "Empate", "Mais de 2.5 gols")
+        # Mostra escolha real do usuário (ex: "Sport", "Empate", etc)
         sd["descricao"] = sd.get("escolha") or "Indefinido"
 
-        # Ajusta data e hora pro formato legível
+        # Ajusta data/hora para formato legível
         dh = sd.get("data_hora")
         if isinstance(dh, datetime):
             sd["data_hora"] = dh.strftime("%d/%m %H:%M")
@@ -644,8 +666,8 @@ for b in c.fetchall():
     apostas_pendentes.append(bdict)
 
 
-    # Apostas finalizadas
-    c.execute("""
+# ---------------- Apostas Finalizadas ----------------
+c.execute("""
     SELECT b.*, u.nome AS usuario_nome
     FROM bets b
     JOIN usuarios u ON b.usuario_id = u.id
@@ -679,6 +701,7 @@ for b in c.fetchall():
     bdict["selections"] = sels
     apostas_finalizadas.append(bdict)
 
+
     conn.close()
     return render_template(
         "admin_dashboard.html",
@@ -686,7 +709,6 @@ for b in c.fetchall():
         apostas_pendentes=apostas_pendentes,
         apostas_finalizadas=apostas_finalizadas,
     )
-
 
 @app.route("/admin/approve_transacao/<int:tid>")
 def admin_approve_transacao(tid):
@@ -863,6 +885,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
