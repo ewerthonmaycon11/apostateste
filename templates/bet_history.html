@@ -31,11 +31,15 @@
                                 <div>
                                     Odd: <span class="badge bg-warning text-dark">{{ "%.2f"|format(s.odd) }}</span> •
                                     Resultado: 
+                                    {% if s.admin_edit %}
                                     <select class="form-select form-select-sm d-inline w-auto status-select" data-id="{{ s.id }}">
                                         <option value="pendente" {% if s.resultado=='pendente' %}selected{% endif %}>Pendente</option>
                                         <option value="ganho" {% if s.resultado=='ganho' %}selected{% endif %}>Ganho</option>
                                         <option value="perdeu" {% if s.resultado=='perdeu' %}selected{% endif %}>Perdeu</option>
                                     </select>
+                                    {% else %}
+                                    <span>{{ s.resultado|capitalize }}</span>
+                                    {% endif %}
                                 </div>
                             </li>
                         {% endfor %}
