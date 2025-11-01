@@ -26,19 +26,32 @@
                         {% for s in b.selections %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="fw-bold">{{ s.tipo|capitalize }}</span> • {{ s.descricao }}
+                                    <span class="fw-bold">{{ s.tipo|capitalize }}</span> • 
+                                    {% if s.tipo=='principal' %}
+                                        {% if s.escolha == 'A' %}
+                                            Vitória {{ s.time_a }}
+                                        {% elif s.escolha == 'B' %}
+                                            Vitória {{ s.time_b }}
+                                        {% elif s.escolha == 'X' %}
+                                            Empate
+                                        {% else %}
+                                            {{ s.descricao }}
+                                        {% endif %}
+                                    {% else %}
+                                        {{ s.descricao }}
+                                    {% endif %}
                                 </div>
                                 <div>
                                     Odd: <span class="badge bg-warning text-dark">{{ "%.2f"|format(s.odd) }}</span> •
                                     Resultado: 
-                                    {% if s.admin_edit %}
+                                    {% if is_admin|default(False) %}
                                     <select class="form-select form-select-sm d-inline w-auto status-select" data-id="{{ s.id }}">
                                         <option value="pendente" {% if s.resultado=='pendente' %}selected{% endif %}>Pendente</option>
                                         <option value="ganho" {% if s.resultado=='ganho' %}selected{% endif %}>Ganho</option>
                                         <option value="perdeu" {% if s.resultado=='perdeu' %}selected{% endif %}>Perdeu</option>
                                     </select>
                                     {% else %}
-                                    <span>{{ s.resultado|capitalize }}</span>
+                                        {{ s.resultado|capitalize }}
                                     {% endif %}
                                 </div>
                             </li>
@@ -50,6 +63,7 @@
     {% endif %}
 </div>
 
+{% if is_admin|default(False) %}
 <script>
 document.querySelectorAll(".status-select").forEach(select => {
     select.addEventListener("change", function() {
@@ -69,5 +83,6 @@ document.querySelectorAll(".status-select").forEach(select => {
     });
 });
 </script>
+{% endif %}
 
 {% endblock %}
