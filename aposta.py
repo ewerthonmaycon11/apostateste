@@ -516,55 +516,57 @@ def apostar():
 @app.route("/historico")
 def historico():
     if not session.get("usuario_id"):
-        return redirect(url_for("login"))
+        return redirect(url_for("dashboard"))  # Ajuste caso tenha login
 
     uid = session["usuario_id"]
+    is_admin = session.get("is_admin", False)
     conn = get_conn()
-    c = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    # pega todas as apostas do usuário
-    c.execute("SELECT * FROM bets WHERE usuario_id=%s ORDER BY criado_em DESC", (uid,))
-    bets_rows = c.fetchall()
+    cur.execute("SELECT * FROM bets WHERE usuario_id=%s ORDER BY criado_em DESC", (uid,))
+    bets_rows = cur.fetchall()
     bets = []
 
     for b in bets_rows:
-        bdict = row_to_dict(b)
+        bdict = b
 
-        # pega seleções e informações do jogo
-        c.execute("""
+        # pega todas as seleções dessa aposta
+        cur.execute("""
             SELECT s.*, j.time_a, j.time_b
             FROM bet_selections s
             LEFT JOIN jogos j ON s.jogo_id = j.id
-            WHERE s.bet_id = %s
+            WHERE s.bet_id=%s
             ORDER BY s.id
         """, (b["id"],))
 
-        selections_rows = c.fetchall()
+        selections_rows = cur.fetchall()
         selections = []
 
         for s in selections_rows:
-            sd = row_to_dict(s)
+            sd = s
 
+            # Nome dos times
             time_a = sd.get("time_a") or "Time A"
             time_b = sd.get("time_b") or "Time B"
 
-            # descrição legível
+            # Descrição legível da aposta
             escolha = sd.get("escolha")
             if escolha == "A":
-                descricao = f"Vitória {time_a}"
+                descricao = f"{time_a} vence"
             elif escolha == "B":
-                descricao = f"Vitória {time_b}"
-            elif escolha == "X" or (isinstance(escolha, str) and escolha.lower() == "empate"):
+                descricao = f"{time_b} vence"
+            elif escolha.lower() == "empate" or escolha == "X":
                 descricao = "Empate"
             else:
                 descricao = sd.get("tipo") or "Indefinido"
 
             selections.append({
+                "id": sd.get("id"),
                 "descricao": descricao,
-                "tipo": sd.get("tipo"),
+                "tipo": sd.get("tipo", "Principal"),
                 "odd": float(sd.get("odd", 0)),
-                "resultado": sd.get("resultado") or "Pendente",
-                "data_hora": sd.get("data_hora")
+                "resultado": sd.get("resultado") or "pendente",
+                "admin_edit": is_admin,  # flag para habilitar edição
             })
 
         bdict["selections"] = selections
@@ -897,6 +899,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
