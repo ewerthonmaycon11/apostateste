@@ -403,9 +403,9 @@ def apostar():
     usuario_id = session["usuario_id"]
 
     if request.is_json:
-        return aposta_multipla()  # delega para função JSON
+        # Se for JSON, delega para aposta_multipla (boa prática)
+        return aposta_multipla() 
     else:
-        # POST normal
         try:
             stake = float(request.form.get("valor", 0))
         except ValueError:
@@ -420,58 +420,6 @@ def apostar():
         conn = get_conn()
         c = conn.cursor()
 
-        if jogo_id:
-            try:
-                jogo_id_int = int(jogo_id)
-            except ValueError:
-                conn.close()
-                flash("ID de jogo inválido.", "danger")
-                return redirect(url_for("dashboard"))
-
-            # Pega informações do jogo
-            c.execute("SELECT * FROM jogos WHERE id=%s", (jogo_id_int,))
-            jogo = c.fetchone()
-            if not jogo:
-                conn.close()
-                flash("Jogo inválido.", "danger")
-                return redirect(url_for("dashboard"))
-
-           # Adiciona principal
-            if principal in ["A", "B", "X"]:
-                odd = jogo[f"odd_{principal.lower()}"]
-                selections.append({
-                    "jogo_id": jogo["id"],
-                    "tipo": "principal",
-                    "escolha": principal,
-                    "odd": odd,
-                    "time_a": jogo["time_a"],
-                    "time_b": jogo["time_b"],
-                    "data_hora": datetime.now()
-                })
-
-def apostar():
-    if not session.get("usuario_id"):
-        return redirect(url_for("login"))
-
-    usuario_id = session["usuario_id"]
-
-    if request.is_json:
-        # Se for JSON, delega para aposta_multipla
-        return aposta_multipla() 
-    else:
-        try:
-            stake = float(request.form.get("valor", 0))
-        except ValueError:
-            flash("Valor de aposta inválido.", "warning")
-            return redirect(url_for("dashboard"))
-
-        jogo_id = request.form.get("jogo_id")
-        principal = request.form.get("aposta_principal")
-        extras_ids = request.form.getlist("extras")
-        selections = []
-        conn = get_conn()
-        c = conn.cursor()
-        
         # --- 1. COLETA AS SELEÇÕES E ODDS ---
         if jogo_id:
             try:
@@ -488,20 +436,42 @@ def apostar():
                 flash("Jogo inválido.", "danger")
                 return redirect(url_for("dashboard"))
 
-            # Adiciona a seleção principal com time_a e time_b
-            if principal in ["A", "X", "B"]:
-                odd_val = {"A": jogo["odd_a"], "X": jogo["odd_x"], "B": jogo["odd_b"]}[principal]
+            # --- Seleção principal ---
+            if principal == "A":
                 selections.append({
                     "jogo_id": jogo["id"],
                     "tipo": "principal",
-                    "escolha": principal,
-                    "odd": odd_val,
+                    "escolha": "A",
+                    "descricao": f"Vitória {jogo['time_a']}",
+                    "odd": jogo["odd_a"],
+                    "time_a": jogo["time_a"],
+                    "time_b": jogo["time_b"],
+                    "data_hora": datetime.now()
+                })
+            elif principal == "B":
+                selections.append({
+                    "jogo_id": jogo["id"],
+                    "tipo": "principal",
+                    "escolha": "B",
+                    "descricao": f"Vitória {jogo['time_b']}",
+                    "odd": jogo["odd_b"],
+                    "time_a": jogo["time_a"],
+                    "time_b": jogo["time_b"],
+                    "data_hora": datetime.now()
+                })
+            elif principal == "X":
+                selections.append({
+                    "jogo_id": jogo["id"],
+                    "tipo": "principal",
+                    "escolha": "X",
+                    "descricao": "Empate",
+                    "odd": jogo["odd_x"],
                     "time_a": jogo["time_a"],
                     "time_b": jogo["time_b"],
                     "data_hora": datetime.now()
                 })
 
-            # Adiciona seleções extras
+            # --- Seleções extras ---
             for exid in extras_ids:
                 try:
                     exid_int = int(exid)
@@ -511,20 +481,21 @@ def apostar():
                 c.execute("SELECT * FROM extras WHERE id=%s", (exid_int,))
                 row = c.fetchone()
                 if row:
-                    # Garante que time_a e time_b também sejam salvos para extras
+                    # Busca time_a e time_b do jogo relacionado
                     c.execute("SELECT time_a, time_b FROM jogos WHERE id=%s", (row["jogo_id"],))
                     jogo_extra = c.fetchone()
                     selections.append({
                         "jogo_id": row["jogo_id"],
                         "tipo": "extra",
                         "escolha": row["descricao"],
+                        "descricao": row["descricao"],
                         "odd": row["odd"],
                         "time_a": jogo_extra["time_a"] if jogo_extra else "Time A",
                         "time_b": jogo_extra["time_b"] if jogo_extra else "Time B",
                         "data_hora": datetime.now()
                     })
 
-        # --- 2. VALIDAÇÃO E CÁLCULO ---
+        # --- 2. VALIDAÇÃO ---
         if stake <= 0:
             conn.close()
             flash("Valor de aposta precisa ser maior que zero.", "warning")
@@ -542,41 +513,43 @@ def apostar():
             flash("Saldo insuficiente. Solicite depósito.", "danger")
             return redirect(url_for("dashboard"))
 
-        odd_list = [float(s["odd"]) for s in selections]
-        total_odd = calc_total_odd(odd_list)
+        total_odd = calc_total_odd([float(s["odd"]) for s in selections])
         potential = calc_potential(stake, total_odd)
 
         # --- 3. SALVAMENTO NO BANCO ---
         now = datetime.now().isoformat()
-        c.execute("INSERT INTO bets (usuario_id, stake, total_odd, potential, status, criado_em) "
-                  "VALUES (%s,%s,%s,%s,%s,%s) RETURNING id",
-                  (usuario_id, stake, total_odd, potential, "pendente", now))
+        c.execute(
+            "INSERT INTO bets (usuario_id, stake, total_odd, potential, status, criado_em) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id",
+            (usuario_id, stake, total_odd, potential, "pendente", now)
+        )
         bet_id = c.fetchone()["id"]
 
         for s in selections:
             c.execute(
-                "INSERT INTO bet_selections (bet_id, jogo_id, tipo, escolha, odd, resultado, time_a, time_b, data_hora) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "INSERT INTO bet_selections (bet_id, jogo_id, tipo, escolha, descricao, odd, resultado, time_a, time_b, data_hora) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
                     bet_id,
                     s.get("jogo_id"),
                     s.get("tipo"),
                     s.get("escolha"),
+                    s.get("descricao"),
                     float(s.get("odd")),
                     "pendente",
                     s.get("time_a"),
                     s.get("time_b"),
-                    s.get("data_hora").strftime("%Y-%m-%d %H:%M:%S")
+                    str(s.get("data_hora"))
                 )
             )
 
-        # Deduz saldo
+        # Atualiza saldo
         c.execute("UPDATE usuarios SET saldo = saldo - %s WHERE id = %s", (stake, usuario_id))
         conn.commit()
         conn.close()
 
         flash(f"Aposta registrada. Potencial: R$ {potential:.2f}", "success")
         return redirect(url_for("historico"))
+
 
 
 
@@ -981,6 +954,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
