@@ -437,34 +437,58 @@ def apostar():
                 return redirect(url_for("dashboard"))
 
             # --- Seleção principal ---
-if principal in ["A", "B", "X"]:
-    escolha = principal.upper()
+            # --- Seleção principal ---
+        if principal in ["A", "B", "X"]:
+            escolha = principal.upper()
 
-    # Garante que o time certo será vinculado à escolha
-    if escolha == "A":
-        time_escolhido = jogo["time_a"]
-        odd = float(jogo["odd_a"])
-        descricao = f"Vitória {time_escolhido}"
-    elif escolha == "B":
-        time_escolhido = jogo["time_b"]
-        odd = float(jogo["odd_b"])
-        descricao = f"Vitória {time_escolhido}"
-    else:
-        time_escolhido = "Empate"
-        odd = float(jogo["odd_x"])
-        descricao = "Empate"
+            # Garante que o time certo será vinculado à escolha
+            if escolha == "A":
+                time_escolhido = jogo["time_a"]
+                odd = float(jogo["odd_a"])
+                descricao = f"Vitória {time_escolhido}"
+            elif escolha == "B":
+                time_escolhido = jogo["time_b"]
+                odd = float(jogo["odd_b"])
+                descricao = f"Vitória {time_escolhido}"
+            else:
+                time_escolhido = "Empate"
+                odd = float(jogo["odd_x"])
+                descricao = "Empate"
 
-    selections.append({
-        "jogo_id": jogo["id"],
-        "tipo": "principal",
-        "escolha": escolha,
-        "descricao": descricao,
-        "odd": odd,
-        "time_a": jogo["time_a"],
-        "time_b": jogo["time_b"],
-        "data_hora": datetime.now()
-    })
+            selections.append({
+                "jogo_id": jogo["id"],
+                "tipo": "principal",
+                "escolha": escolha,
+                "descricao": descricao,
+                "odd": odd,
+                "time_a": jogo["time_a"],
+                "time_b": jogo["time_b"],
+                "data_hora": datetime.now()
+            })
 
+        # --- Seleções extras ---
+        for exid in extras_ids:
+            try:
+                exid_int = int(exid)
+            except ValueError:
+                continue
+
+            c.execute("SELECT * FROM extras WHERE id=%s", (exid_int,))
+            row = c.fetchone()
+            if row:
+                # Busca time_a e time_b do jogo relacionado
+                c.execute("SELECT time_a, time_b FROM jogos WHERE id=%s", (row["jogo_id"],))
+                jogo_extra = c.fetchone()
+                selections.append({
+                    "jogo_id": row["jogo_id"],
+                    "tipo": "extra",
+                    "escolha": row["descricao"],
+                    "descricao": row["descricao"],
+                    "odd": row["odd"],
+                    "time_a": jogo_extra["time_a"] if jogo_extra else "Time A",
+                    "time_b": jogo_extra["time_b"] if jogo_extra else "Time B",
+                    "data_hora": datetime.now()
+                })
             # --- Seleções extras ---
             for exid in extras_ids:
                 try:
@@ -948,6 +972,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
