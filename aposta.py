@@ -436,8 +436,8 @@ def apostar():
                 flash("Jogo inválido.", "danger")
                 return redirect(url_for("dashboard"))
 
-            # Adiciona principal
-            if principal in ["A","B","X"]:
+           # Adiciona principal
+            if principal in ["A", "B", "X"]:
                 odd = jogo[f"odd_{principal.lower()}"]
                 selections.append({
                     "jogo_id": jogo["id"],
@@ -445,7 +445,10 @@ def apostar():
                     "escolha": principal,
                     "odd": odd,
                     "time_a": jogo["time_a"],
-                    "time_b": jogo["time_b"],@app.route("/apostar", methods=["POST"])
+                    "time_b": jogo["time_b"],
+                    "data_hora": datetime.now()
+                })
+
 def apostar():
     if not session.get("usuario_id"):
         return redirect(url_for("login"))
@@ -978,6 +981,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
