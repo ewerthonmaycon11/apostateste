@@ -437,39 +437,33 @@ def apostar():
                 return redirect(url_for("dashboard"))
 
             # --- Seleção principal ---
-            if principal == "A":
-                selections.append({
-                    "jogo_id": jogo["id"],
-                    "tipo": "principal",
-                    "escolha": "A",
-                    "descricao": f"Vitória {jogo['time_a']}",
-                    "odd": jogo["odd_a"],
-                    "time_a": jogo["time_a"],
-                    "time_b": jogo["time_b"],
-                    "data_hora": datetime.now()
-                })
-            elif principal == "B":
-                selections.append({
-                    "jogo_id": jogo["id"],
-                    "tipo": "principal",
-                    "escolha": "B",
-                    "descricao": f"Vitória {jogo['time_b']}",
-                    "odd": jogo["odd_b"],
-                    "time_a": jogo["time_a"],
-                    "time_b": jogo["time_b"],
-                    "data_hora": datetime.now()
-                })
-            elif principal == "X":
-                selections.append({
-                    "jogo_id": jogo["id"],
-                    "tipo": "principal",
-                    "escolha": "X",
-                    "descricao": "Empate",
-                    "odd": jogo["odd_x"],
-                    "time_a": jogo["time_a"],
-                    "time_b": jogo["time_b"],
-                    "data_hora": datetime.now()
-                })
+if principal in ["A", "B", "X"]:
+    escolha = principal.upper()
+
+    # Garante que o time certo será vinculado à escolha
+    if escolha == "A":
+        time_escolhido = jogo["time_a"]
+        odd = float(jogo["odd_a"])
+        descricao = f"Vitória {time_escolhido}"
+    elif escolha == "B":
+        time_escolhido = jogo["time_b"]
+        odd = float(jogo["odd_b"])
+        descricao = f"Vitória {time_escolhido}"
+    else:
+        time_escolhido = "Empate"
+        odd = float(jogo["odd_x"])
+        descricao = "Empate"
+
+    selections.append({
+        "jogo_id": jogo["id"],
+        "tipo": "principal",
+        "escolha": escolha,
+        "descricao": descricao,
+        "odd": odd,
+        "time_a": jogo["time_a"],
+        "time_b": jogo["time_b"],
+        "data_hora": datetime.now()
+    })
 
             # --- Seleções extras ---
             for exid in extras_ids:
@@ -954,6 +948,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
