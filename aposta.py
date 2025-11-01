@@ -638,10 +638,11 @@ def admin_dashboard():
     # ---------------- Função auxiliar para montar seleções ----------------
     def carregar_selecoes(bet_id):
         c.execute("""
-            SELECT *
-            FROM bet_selections
-            WHERE bet_id = %s
-            ORDER BY id
+            SELECT s.*, j.time_a, j.time_b
+            FROM bet_selections s
+            LEFT JOIN jogos j ON s.jogo_id = j.id
+            WHERE s.bet_id = %s
+            ORDER BY s.id
         """, (bet_id,))
 
         selecoes = []
@@ -649,11 +650,15 @@ def admin_dashboard():
             sd = row_to_dict(s)
             opcao = sd.get("escolha")
 
-            # mesma lógica do histórico
+            # pega nomes do jogo
+            time_a = sd.get("time_a") or "Time A"
+            time_b = sd.get("time_b") or "Time B"
+
+            # mesma lógica do histórico para descrição
             if opcao == "A":
-                sd["descricao"] = f"Vitória {sd.get('time_a','Time A')}"
+                sd["descricao"] = f"Vitória {time_a}"
             elif opcao == "B":
-                sd["descricao"] = f"Vitória {sd.get('time_b','Time B')}"
+                sd["descricao"] = f"Vitória {time_b}"
             elif opcao == "X" or (isinstance(opcao, str) and opcao.lower() == "empate"):
                 sd["descricao"] = "Empate"
             else:
@@ -694,7 +699,7 @@ def admin_dashboard():
         SELECT b.*, u.nome AS usuario_nome
         FROM bets b
         JOIN usuarios u ON b.usuario_id = u.id
-        WHERE b.status IN ('ganhou', 'perdeu')
+        WHERE b.status IN ('ganho', 'perdido')
         ORDER BY b.id DESC
     """)
     apostas_finalizadas = []
@@ -888,6 +893,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
