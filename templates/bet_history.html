@@ -1,26 +1,46 @@
 {% extends "base.html" %}
-{% block title %}Minhas Apostas{% endblock %}
-
 {% block conteudo %}
-<h4 class="mb-3">Histórico de Apostas</h4>
 
-<div class="card p-3">
-  {% for b in bets %}
-    <div class="mb-3 border-bottom pb-2">
-      <div class="d-flex justify-content-between">
-        <div><strong>ID {{ b.id }}</strong> • <small class="small-muted">{{ b.criado_em }}</small></div>
-        <div><strong>{{ b.status|capitalize }}</strong></div>
-      </div>
-      <div class="small-muted">Stake: R$ {{ '%.2f' % b.stake }} — Odd total: {{ '%.2f' % b.total_odd }} — Potencial: R$ {{ '%.2f' % b.potential }}</div>
+<div class="container my-5">
+    <h2 class="mb-4">Histórico de Apostas</h2>
 
-      <ul class="mt-2">
-        {% for s in b.selections %}
-          <li>{{ s.tipo }} • {{ s.escolha }} — Odd: {{ '%.2f' % s.odd }} • Resultado: {{ s.resultado }}</li>
+    {% if not bets %}
+        <p>Nenhuma aposta encontrada.</p>
+    {% else %}
+        {% for b in bets %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>ID {{ b.id }}</strong>
+                    <span>{{ b.criado_em[:19] }}</span>
+                    <span class="badge {% if b.status=='ganho' %}bg-success{% elif b.status=='perdido' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                        {{ b.status|capitalize }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p>
+                        <strong>Stake:</strong> R$ {{ "%.2f"|format(b.stake) }} —
+                        <strong>Odd total:</strong> {{ "%.2f"|format(b.total_odd) }} —
+                        <strong>Potencial:</strong> R$ {{ "%.2f"|format(b.potential) }}
+                    </p>
+                    <ul class="list-group">
+                        {% for s in b.selections %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-bold text-capitalize">{{ s.tipo }}</span> • {{ s.descricao }}
+                                </div>
+                                <div>
+                                    Odd: <span class="badge bg-primary">{{ "%.2f"|format(s.odd) }}</span> •
+                                    Resultado: <span class="badge {% if s.resultado=='ganho' %}bg-success{% elif s.resultado=='perdeu' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ s.resultado|capitalize }}
+                                    </span>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
         {% endfor %}
-      </ul>
-    </div>
-  {% else %}
-    <div class="small-muted">Você ainda não fez apostas.</div>
-  {% endfor %}
+    {% endif %}
 </div>
+
 {% endblock %}
