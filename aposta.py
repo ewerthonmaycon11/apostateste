@@ -517,57 +517,61 @@ def apostar():
 def historico():
     if not session.get("usuario_id"):
         return redirect(url_for("login"))
+
     uid = session["usuario_id"]
     conn = get_conn()
     c = conn.cursor()
 
-    # pega apostas do usuário
+    # pega todas as apostas do usuário
     c.execute("SELECT * FROM bets WHERE usuario_id=%s ORDER BY criado_em DESC", (uid,))
+    bets_rows = c.fetchall()
     bets = []
-    for b in c.fetchall():
+
+    for b in bets_rows:
         bdict = row_to_dict(b)
 
-        # pega seleções JUNTANDO info do jogo
+        # pega seleções e informações do jogo
         c.execute("""
-    SELECT * FROM bet_selections
-    WHERE bet_id = %s
-    ORDER BY id
-""", (b["id"],))
+            SELECT s.*, j.time_a, j.time_b
+            FROM bet_selections s
+            LEFT JOIN jogos j ON s.jogo_id = j.id
+            WHERE s.bet_id = %s
+            ORDER BY s.id
+        """, (b["id"],))
 
-        sels_rows = c.fetchall()
-
+        selections_rows = c.fetchall()
         selections = []
-        for s in sels_rows:
+
+        for s in selections_rows:
             sd = row_to_dict(s)
 
-            # monta descrição legível
+            time_a = sd.get("time_a") or "Time A"
+            time_b = sd.get("time_b") or "Time B"
+
+            # descrição legível
             escolha = sd.get("escolha")
             if escolha == "A":
-                sd["descricao"] = f"Vitória {sd.get('time_a','Time A')}"
+                descricao = f"Vitória {time_a}"
             elif escolha == "B":
-                sd["descricao"] = f"Vitória {sd.get('time_b','Time B')}"
-            elif escolha == "X":
-                sd["descricao"] = "Empate"
+                descricao = f"Vitória {time_b}"
+            elif escolha == "X" or (isinstance(escolha, str) and escolha.lower() == "empate"):
+                descricao = "Empate"
             else:
-                sd["descricao"] = sd.get("tipo") or "Indefinido"
+                descricao = sd.get("tipo") or "Indefinido"
 
-            # garante resultado
-            sd["resultado"] = sd.get("resultado") or "Pendente"
-
-            # garante odd em float
-            if sd.get("odd") is not None:
-                sd["odd"] = float(sd["odd"])
-
-            selections.append(sd)
+            selections.append({
+                "descricao": descricao,
+                "tipo": sd.get("tipo"),
+                "odd": float(sd.get("odd", 0)),
+                "resultado": sd.get("resultado") or "Pendente",
+                "data_hora": sd.get("data_hora")
+            })
 
         bdict["selections"] = selections
         bets.append(bdict)
 
     conn.close()
     return render_template("bet_history.html", bets=bets)
-
-
-# ... (O resto das suas rotas de Depósito/Saque/Admin/Logout estão OK e não precisam de alteração) ...
 
 # ------------------ DEPÓSITO / SAQUE ------------------
 @app.route("/depositar", methods=["GET", "POST"])
@@ -893,6 +897,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
