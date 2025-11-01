@@ -575,6 +575,7 @@ def historico():
     conn.close()
     return render_template("bet_history.html", bets=bets)
 
+
 # ------------------ DEPÓSITO / SAQUE ------------------
 @app.route("/depositar", methods=["GET", "POST"])
 def depositar():
@@ -899,6 +900,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
