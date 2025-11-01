@@ -10,7 +10,7 @@ app.secret_key = "supersegredo123"
 # ------------------ Config Banco ------------------
 DB_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://apostaonline_user:rM2mWO5FaaCmMgXEmp2pharDko1Cc1SE@dpg-d3e71fh5pdvs738qrmn0-a.oregon-postgres.render.com/apostaonline"
+    "postgresql://neondb_owner:npg_YI7kwr3TEWLH@ep-odd-tree-ad32dztk-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 )
 def get_db_connection():
     DB_URL = os.getenv("DATABASE_URL", "postgresql://apostaonline_user:rM2mWO5FaaCmMgXEmp2pharDko1Cc1SE@dpg-d3e71fh5pdvs738qrmn0-a.oregon-postgres.render.com/apostaonline")
@@ -887,6 +887,7 @@ def logout():
 # ------------------ RODAR ------------------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
 
