@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<div class="container my-5">
+  <h2 class="mb-4 text-warning">Histórico de Apostas</h2>
+
+  {% if not bets %}
+    <p class="text-muted">Nenhuma aposta encontrada.</p>
+  {% else %}
+    {% for b in bets %}
+      <div class="card mb-4 shadow-sm border-warning bg-dark text-light">
+        <div class="card-header d-flex justify-content-between align-items-center bg-warning text-dark">
+          <div>
+            <strong>Aposta #{{ b.id }}</strong> — 
+            <span>{{ b.criado_em[:19] if b.criado_em else '' }}</span>
+          </div>
+          <span class="badge {% if b.status=='ganho' %}bg-success{% elif b.status=='perdido' %}bg-danger{% else %}bg-secondary text-dark{% endif %}">
+            {{ b.status|capitalize }}
+          </span>
+        </div>
+
+        <div class="card-body">
+          <p class="mb-2">
+            <strong>Stake:</strong> R$ {{ "%.2f"|format(b.stake) }} • 
+            <strong>Odd Total:</strong> {{ "%.2f"|format(b.total_odd) }} • 
+            <strong>Potencial:</strong> R$ {{ "%.2f"|format(b.potential) }}
+          </p>
+
+          <div class="list-group list-group-flush">
+            {% for s in b.selections %}
+              <div class="list-group-item bg-dark text-light border-secondary mb-2 rounded">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <strong>{{ s.time_a }} vs {{ s.time_b }}</strong><br>
+                    <small class="text-warning">{{ s.tipo|capitalize }}</small> — 
+                    {{ s.descricao }} <small>(Odd: {{ "%.2f"|format(s.odd) }})</small>
+                  </div>
+                  <div class="text-end">
+                    <span>Resultado:</span><br>
+
+                    {% if session.get('usuario_nome') == 'admin' %}
+                      <select class="form-select form-select-sm status-select bg-warning text-dark fw-bold" data-id="{{ s.id }}">
+                        <option value="pendente" {% if s.resultado == 'pendente' %}selected{% endif %}>Pendente</option>
+                        <option value="ganho" {% if s.resultado == 'ganho' %}selected{% endif %}>Ganho</option>
+                        <option value="perdido" {% if s.resultado == 'perdido' %}selected{% endif %}>Perdido</option>
+                      </select>
+                    {% else %}
+                      <span class="badge {% if s.resultado=='ganho' %}bg-success{% elif s.resultado=='perdido' %}bg-danger{% else %}bg-secondary text-dark{% endif %}">
+                        {{ s.resultado|capitalize }}
+                      </span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+{% if session.get('usuario_nome') == 'admin' %}
+<script>
+document.querySelectorAll(".status-select").forEach(select => {
+  select.addEventListener("change", function() {
+    const selId = this.dataset.id;
+    const novoStatus = this.value;
+
+    fetch("/update_selection_status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: selId, status: novoStatus })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        alert("Erro ao atualizar status!");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Falha na comunicação com o servidor.");
+    });
+  });
+});
+</script>
+{% endif %}
+
+{% endblock %}
