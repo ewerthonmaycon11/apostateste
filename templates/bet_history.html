@@ -28,20 +28,20 @@
 
                     <ul class="list-group list-group-flush">
                         {% for s in b.selections %}
-                        <li class="list-group-item">
+                        <li class="list-group-item bg-dark text-light border-secondary mb-2 rounded">
                             <div>
                                 <small class="text-muted d-block mb-1">
-                                    {{ s.time_a|default('Time A') }} vs {{ s.time_b|default('Time B') }} 
+                                    {{ s.time_a or s.get('time_a') or 'Time A' }} vs {{ s.time_b or s.get('time_b') or 'Time B' }} 
                                     — {{ s.data_hora|default('') }}
                                 </small>
 
                                 {% if s.tipo == 'principal' %}
-                                    <span class="fw-semibold text-dark">
+                                    <span class="fw-semibold text-warning">
                                         Principal:
                                         {% if s.escolha == 'A' %}
-                                            <span class="text-orange">{{ s.time_a|default('Time A') }}</span>
+                                            <span class="text-orange">{{ s.time_a or s.get('time_a') or 'Time A' }}</span>
                                         {% elif s.escolha == 'B' %}
-                                            <span class="text-orange">{{ s.time_b|default('Time B') }}</span>
+                                            <span class="text-orange">{{ s.time_b or s.get('time_b') or 'Time B' }}</span>
                                         {% elif s.escolha == 'X' %}
                                             <span class="text-orange">Empate</span>
                                         {% else %}
@@ -49,7 +49,7 @@
                                         {% endif %}
                                     </span>
                                 {% else %}
-                                    <span class="fw-semibold text-dark">
+                                    <span class="fw-semibold text-warning">
                                         Extra: <span class="text-orange">{{ s.escolha|default('Indefinido') }}</span>
                                     </span>
                                 {% endif %}
@@ -61,18 +61,25 @@
                             <div class="mt-1">
                                 Resultado:
                                 {% if is_admin|default(False) %}
-                                    <select class="form-select form-select-sm d-inline w-auto status-select" data-id="{{ s.id }}">
+                                    <select class="form-select form-select-sm d-inline w-auto status-select bg-warning text-dark fw-bold" data-id="{{ s.id }}">
                                         <option value="pendente" {% if s.resultado == 'pendente' %}selected{% endif %}>Pendente</option>
                                         <option value="ganho" {% if s.resultado == 'ganho' %}selected{% endif %}>Ganho</option>
-                                        <option value="perdeu" {% if s.resultado == 'perdeu' %}selected{% endif %}>Perdeu</option>
+                                        <option value="perdido" {% if s.resultado == 'perdido' %}selected{% endif %}>Perdido</option>
                                     </select>
                                 {% else %}
-                                    <span class="{% if s.resultado == 'ganho' %}text-success{% elif s.resultado == 'perdeu' %}text-danger{% else %}text-muted{% endif %}">
+                                    <span class="badge 
+                                        {% if s.resultado == 'ganho' %} bg-success 
+                                        {% elif s.resultado == 'perdido' %} bg-danger 
+                                        {% else %} bg-secondary text-dark 
+                                        {% endif %}">
                                         {{ s.resultado|default('Pendente')|capitalize }}
                                     </span>
                                 {% endif %}
                             </div>
                         </li>
+
+                        <!-- BLOCO DE DEBUG TEMPORÁRIO: mostra dados crus da seleção -->
+                        <pre class="text-light bg-dark p-2 mt-2 rounded small">{{ s | tojson(indent=2) }}</pre>
                         {% endfor %}
                     </ul>
                 </div>
@@ -94,6 +101,9 @@ document.querySelectorAll(".status-select").forEach(select => {
         }).then(res => res.json())
           .then(data => {
               if (!data.success) alert("Erro ao atualizar status!");
+          }).catch(err => {
+              console.error(err);
+              alert("Falha na comunicação com o servidor.");
           });
     });
 });
