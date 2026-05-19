@@ -2,55 +2,95 @@
 {% block conteudo %}
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-    .btn-selected { background-color: #f97316 !important; color: white !important; }
-    .scroll-custom::-webkit-scrollbar { width: 4px; }
-    .scroll-custom::-webkit-scrollbar-thumb { background: #4b5563; }
+    /* Estilização Profissional */
+    .btn-selected { background-color: #f97316 !important; border-color: #ea580c !important; color: white !important; transform: scale(0.98); }
+    .card-gradient { background: linear-gradient(145deg, #1f2937, #111827); }
+    .glass-effect { backdrop-filter: blur(10px); background: rgba(31, 41, 55, 0.8); }
+    .scroll-custom::-webkit-scrollbar { width: 6px; }
+    .scroll-custom::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+    .transition-all-custom { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 </style>
 
-<div class="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-8">
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+<div class="min-h-screen bg-gray-950 text-gray-100 p-2 md:p-6">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <div class="lg:col-span-8 space-y-6">
-            <div class="flex justify-between items-center bg-gray-800 p-6 rounded-2xl border border-gray-700">
-                <h1 class="text-2xl font-bold">Eventos Ao Vivo</h1>
-                <div class="bg-gray-900 px-4 py-2 rounded-full border border-orange-500 text-orange-500 font-bold">
-                    Saldo: R$ {{ "%.2f"|format(usuario.saldo or 0) }}
+            <div class="card-gradient p-6 rounded-3xl border border-gray-800 flex justify-between items-center shadow-2xl">
+                <div>
+                    <h1 class="text-3xl font-extrabold tracking-tight">Eventos</h1>
+                    <p class="text-gray-400">Seleção de mercado esportivo</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs uppercase tracking-widest text-gray-500">Seu Saldo</p>
+                    <p class="text-2xl font-black text-orange-500">R$ {{ "%.2f"|format(usuario.saldo or 0) }}</p>
                 </div>
             </div>
 
             {% for jogo in jogos %}
-            <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 hover:border-gray-500 transition shadow-lg">
-                <div class="flex justify-between text-sm text-gray-400 mb-4">
-                    <span>⚽ Futebol</span>
-                    <span>{{ jogo.data_hora.strftime("%d/%m %H:%M") }}</span>
-                </div>
-                <div class="flex justify-between items-center mb-6">
-                    <span class="font-bold text-lg w-1/3 text-right">{{ jogo.time_a }}</span>
-                    <span class="px-3 text-orange-500 font-black">VS</span>
-                    <span class="font-bold text-lg w-1/3 text-left">{{ jogo.time_b }}</span>
+            <div class="card-gradient p-5 rounded-2xl border border-gray-800 shadow-xl transition-all-custom hover:border-gray-600">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-[10px] uppercase bg-gray-800 px-3 py-1 rounded-full font-bold">Futebol</span>
+                    <span class="text-xs text-gray-400 font-mono">{{ jogo.data_hora.strftime("%d/%m %H:%M") }}</span>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-3">
-                    <button class="add-aposta principal bg-gray-700 hover:bg-orange-600 py-3 rounded-lg font-bold transition" data-jogo="{{ jogo.id }}" data-time="{{ jogo.time_a }}" data-odd="{{ jogo.odd_a }}">1 ({{ '%.2f' % jogo.odd_a }})</button>
-                    <button class="add-aposta principal bg-gray-700 hover:bg-orange-600 py-3 rounded-lg font-bold transition" data-jogo="{{ jogo.id }}" data-time="Empate" data-odd="{{ jogo.odd_x }}">X ({{ '%.2f' % jogo.odd_x }})</button>
-                    <button class="add-aposta principal bg-gray-700 hover:bg-orange-600 py-3 rounded-lg font-bold transition" data-jogo="{{ jogo.id }}" data-time="{{ jogo.time_b }}" data-odd="{{ jogo.odd_b }}">2 ({{ '%.2f' % jogo.odd_b }})</button>
+                <div class="text-center mb-6">
+                    <p class="text-lg font-bold">{{ jogo.time_a }} <span class="text-gray-600">vs</span> {{ jogo.time_b }}</p>
                 </div>
+
+                <div class="grid grid-cols-3 gap-2 mb-6">
+                    <button class="add-aposta principal flex flex-col items-center bg-gray-800 hover:bg-gray-700 py-2 rounded-lg border border-gray-700 transition-all-custom" data-jogo="{{ jogo.id }}" data-time="{{ jogo.time_a }}" data-odd="{{ jogo.odd_a }}">
+                        <span class="text-[10px] opacity-70">1</span>
+                        <span class="font-bold">{{ '%.2f' % jogo.odd_a }}</span>
+                    </button>
+                    <button class="add-aposta principal flex flex-col items-center bg-gray-800 hover:bg-gray-700 py-2 rounded-lg border border-gray-700 transition-all-custom" data-jogo="{{ jogo.id }}" data-time="Empate" data-odd="{{ jogo.odd_x }}">
+                        <span class="text-[10px] opacity-70">X</span>
+                        <span class="font-bold">{{ '%.2f' % jogo.odd_x }}</span>
+                    </button>
+                    <button class="add-aposta principal flex flex-col items-center bg-gray-800 hover:bg-gray-700 py-2 rounded-lg border border-gray-700 transition-all-custom" data-jogo="{{ jogo.id }}" data-time="{{ jogo.time_b }}" data-odd="{{ jogo.odd_b }}">
+                        <span class="text-[10px] opacity-70">2</span>
+                        <span class="font-bold">{{ '%.2f' % jogo.odd_b }}</span>
+                    </button>
+                </div>
+
+                {% if jogo.extras %}
+                <div class="mt-4 pt-4 border-t border-gray-800">
+                    <p class="text-[11px] uppercase font-bold text-gray-500 mb-3 ml-1">Mercados Extras</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        {% for ex in jogo.extras %}
+                        <button class="add-aposta extra flex justify-between bg-gray-900/50 hover:bg-gray-700 p-3 rounded-lg border border-gray-800 transition-all-custom text-xs" 
+                                data-jogo="{{ jogo.id }}" data-time="{{ ex.descricao }}" data-odd="{{ ex.odd }}">
+                            <span class="truncate font-medium">{{ ex.descricao }}</span>
+                            <span class="font-bold text-orange-400">{{ '%.2f' % ex.odd }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
 
         <div class="lg:col-span-4">
-            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 sticky top-20 shadow-2xl">
-                <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">🧾 Meu Bilhete</h2>
-                <ul id="lista-apostas" class="space-y-3 mb-6 scroll-custom max-h-64 overflow-y-auto"></ul>
+            <div class="card-gradient p-6 rounded-3xl sticky top-6 border border-gray-800 shadow-2xl">
+                <h2 class="text-xl font-black mb-6 flex items-center">
+                    <span class="bg-orange-500 w-2 h-6 rounded-full mr-3"></span> Bilhete de Apostas
+                </h2>
                 
-                <div class="space-y-3 bg-gray-900 p-4 rounded-xl">
-                    <div class="flex justify-between"><span>Odd Total</span> <span id="oddTotal" class="font-bold">1.00</span></div>
-                    <input type="number" id="valorAposta" placeholder="Valor da aposta (R$)" class="w-full bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
-                    <div class="flex justify-between text-orange-500 font-bold"><span>Retorno</span> <span id="retornoPotencial">R$ 0.00</span></div>
+                <div id="lista-apostas" class="space-y-3 mb-6 scroll-custom max-h-[300px] overflow-y-auto">
+                    <div class="text-center py-10 text-gray-500 italic text-sm">Selecione eventos para começar</div>
                 </div>
-                <button id="finalizarAposta" class="w-full bg-orange-500 hover:bg-orange-600 py-4 mt-6 rounded-xl font-black text-white transition-all transform hover:scale-105 uppercase tracking-widest">
-                    Apostar Agora
+
+                <div class="space-y-4 bg-gray-950 p-4 rounded-2xl border border-gray-800">
+                    <div class="flex justify-between text-sm text-gray-400"><span>Odd Total</span> <span id="oddTotal" class="text-white font-bold">1.00</span></div>
+                    <input type="number" id="valorAposta" placeholder="R$ Valor da Aposta" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-center font-bold">
+                    <div class="flex justify-between items-center text-lg border-t border-gray-800 pt-3">
+                        <span class="text-xs uppercase font-bold text-gray-500">Retorno Potencial</span>
+                        <span id="retornoPotencial" class="text-2xl font-black text-orange-500">R$ 0.00</span>
+                    </div>
+                </div>
+
+                <button id="finalizarAposta" class="w-full bg-orange-600 hover:bg-orange-500 py-4 mt-6 rounded-2xl font-black text-white transition-all-custom transform hover:scale-[1.02] shadow-lg shadow-orange-900/20 uppercase tracking-widest text-sm">
+                    Finalizar Bilhete
                 </button>
             </div>
         </div>
@@ -58,47 +98,54 @@
 </div>
 
 <script>
-    // Lógica mantida e otimizada
+    // Gerenciador de Seleções
     let selecoes = []; let oddTotal = 1.0;
     document.querySelectorAll(".add-aposta").forEach(btn => {
         btn.addEventListener("click", () => {
             const jogo = btn.dataset.jogo; const time = btn.dataset.time;
             const odd = parseFloat(btn.dataset.odd);
+            const tipo = btn.classList.contains("principal") ? "principal" : "extra";
             
+            // Toggle seleção
             if(btn.classList.contains('btn-selected')){
                 btn.classList.remove('btn-selected');
                 selecoes = selecoes.filter(s => !(s.jogo === jogo && s.time === time));
             } else {
+                if(tipo === "principal") document.querySelectorAll(`.add-aposta.principal[data-jogo="${jogo}"]`).forEach(b => b.classList.remove('btn-selected'));
                 btn.classList.add('btn-selected');
-                selecoes.push({ jogo, time, odd });
+                selecoes.push({ jogo, time, odd, tipo });
             }
-            oddTotal = selecoes.reduce((acc, s) => acc * s.odd, 1);
+            
+            oddTotal = selecoes.length > 0 ? selecoes.reduce((acc, s) => acc * s.odd, 1) : 1.0;
             atualizarCarrinho();
         });
     });
 
     function atualizarCarrinho(){
         const lista = document.getElementById("lista-apostas");
-        lista.innerHTML = selecoes.map((s, i) => `
-            <li class="flex justify-between bg-gray-700 p-2 rounded text-sm">
-                <span>${s.time}</span> <span class="font-bold">${s.odd.toFixed(2)}</span>
-            </li>
-        `).join('');
+        if(selecoes.length === 0) lista.innerHTML = `<div class="text-center py-10 text-gray-500 italic text-sm">Selecione eventos para começar</div>`;
+        else {
+            lista.innerHTML = selecoes.map((s, i) => `
+                <div class="flex justify-between items-center bg-gray-800 p-3 rounded-lg border border-gray-700 animate-in fade-in zoom-in">
+                    <div><p class="text-xs font-bold text-white">${s.time}</p><p class="text-[10px] text-gray-400">${s.tipo}</p></div>
+                    <span class="font-bold text-orange-400">${s.odd.toFixed(2)}</span>
+                </div>
+            `).join('');
+        }
         document.getElementById("oddTotal").innerText = oddTotal.toFixed(2);
         const valor = parseFloat(document.getElementById("valorAposta").value) || 0;
         document.getElementById("retornoPotencial").innerText = "R$ " + (valor * oddTotal).toFixed(2);
     }
 
     document.getElementById("valorAposta").addEventListener("input", atualizarCarrinho);
-    
     document.getElementById("finalizarAposta").addEventListener("click", () => {
         const valor = parseFloat(document.getElementById("valorAposta").value);
-        if(!valor) return alert("Insira um valor");
+        if(!valor || valor <= 0) return alert("Insira um valor maior que 0");
         fetch("/aposta_multipla", {
             method: "POST", headers: {"Content-Type": "application/json"},
             body: JSON.stringify({selecoes, valor})
         }).then(r => r.json()).then(resp => {
-            if(resp.ok) { location.reload(); } else { alert(resp.erro); }
+            if(resp.ok) { alert("Aposta aceita!"); location.reload(); } else { alert(resp.erro); }
         });
     });
 </script>
