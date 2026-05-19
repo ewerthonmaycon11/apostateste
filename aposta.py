@@ -585,23 +585,25 @@ def historico():
         bet_ids = [b["id"] for b in bets]
 
         # Seleções com JOIN em jogos
-        cur.execute("""
-            SELECT 
-                s.id,
-                s.bet_id,
-                s.tipo,
-                s.escolha,
-                s.descricao,
-                s.odd,
-                s.resultado,
-                s.data_hora,
-                COALESCE(j.time_a, '') AS time_a,
-                COALESCE(j.time_b, '') AS time_b
-            FROM bet_selections s
-            LEFT JOIN jogos j ON s.jogo_id = j.id
-            WHERE s.bet_id = ANY(%s)
-            ORDER BY s.id DESC;
-        """, (bet_ids,))
+       # Dentro da função historico em aposta.py
+    cur.execute("""
+        SELECT 
+            s.id,
+            s.bet_id,
+            s.tipo,
+            s.escolha,
+            s.descricao,
+            s.odd,
+            s.resultado,
+            s.data_hora,
+            s.escolhido_nome,  -- Adicione esta linha
+            COALESCE(j.time_a, '') AS time_a,
+            COALESCE(j.time_b, '') AS time_b
+        FROM bet_selections s
+        LEFT JOIN jogos j ON s.jogo_id = j.id
+        WHERE s.bet_id = ANY(%s)
+        ORDER BY s.id DESC;
+    """, (bet_ids,))
         selections = cur.fetchall()
 
         # Agrupa seleções dentro das apostas
