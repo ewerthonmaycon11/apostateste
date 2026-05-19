@@ -1,6 +1,17 @@
 {% extends "base.html" %}
 {% block conteudo %}
 <script src="https://cdn.tailwindcss.com"></script>
+
+<nav class="navbar navbar-expand-lg bg-white shadow-sm z-50 relative p-4 mb-4 rounded-lg flex items-center justify-between">
+    <div class="font-bold text-gray-800">Minha Plataforma</div>
+    <div class="space-x-4">
+        <a href="{{ url_for('dashboard') }}" class="text-gray-600 hover:text-orange-500">Dashboard</a>
+        <a href="{{ url_for('historico') }}" class="text-gray-600 hover:text-orange-500">Minhas Apostas</a>
+        <a href="{{ url_for('depositar') }}" class="text-gray-600 hover:text-orange-500">Depositar</a>
+        <a href="{{ url_for('logout') }}" class="text-red-500 hover:text-red-700">Sair</a>
+    </div>
+</nav>
+
 <style>
     .btn-selected { background-color: #f97316 !important; border-color: #ea580c !important; color: white !important; transform: scale(0.98); }
     .card-gradient { background: linear-gradient(145deg, #1f2937, #111827); }
@@ -90,8 +101,6 @@
 
 <script>
     let selecoes = [];
-    
-    // Delegação de eventos no Documento para manter funcionalidade após renderização
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('.add-aposta');
         if (btn) {
@@ -99,7 +108,6 @@
             const time = btn.dataset.time;
             const odd = parseFloat(btn.dataset.odd);
             const tipo = btn.classList.contains("principal") ? "principal" : "extra";
-            
             if(btn.classList.contains('btn-selected')) {
                 btn.classList.remove('btn-selected');
                 selecoes = selecoes.filter(s => !(s.jogo === jogo && s.time === time));
@@ -113,8 +121,6 @@
             }
             atualizarCarrinho();
         }
-
-        // Remover item específico do bilhete
         if (e.target.closest('.remover-aposta')) {
             const index = e.target.closest('.remover-aposta').dataset.index;
             const item = selecoes[index];
@@ -127,20 +133,13 @@
     function atualizarCarrinho() {
         const lista = document.getElementById("lista-apostas");
         const oddTotal = selecoes.length > 0 ? selecoes.reduce((acc, s) => acc * s.odd, 1) : 1.0;
-        
         if(selecoes.length === 0) {
             lista.innerHTML = `<div class="text-center py-10 text-gray-500 italic text-sm">Selecione eventos para começar</div>`;
         } else {
             lista.innerHTML = selecoes.map((s, i) => `
                 <div class="flex justify-between items-center bg-gray-800 p-3 rounded-lg border border-gray-700">
-                    <div>
-                        <p class="text-xs font-bold text-white">${s.time}</p>
-                        <p class="text-[9px] uppercase text-gray-400">${s.tipo}</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-orange-400">${s.odd.toFixed(2)}</span>
-                        <button class="remover-aposta text-red-500 hover:text-red-300" data-index="${i}">✕</button>
-                    </div>
+                    <div><p class="text-xs font-bold text-white">${s.time}</p><p class="text-[9px] uppercase text-gray-400">${s.tipo}</p></div>
+                    <div class="flex items-center gap-3"><span class="font-bold text-orange-400">${s.odd.toFixed(2)}</span><button class="remover-aposta text-red-500 hover:text-red-300" data-index="${i}">✕</button></div>
                 </div>
             `).join('');
         }
@@ -150,20 +149,16 @@
     }
 
     document.getElementById("valorAposta").addEventListener("input", atualizarCarrinho);
-
     document.getElementById("finalizarAposta").addEventListener("click", function() {
         const valor = parseFloat(document.getElementById("valorAposta").value);
         if(!valor || valor <= 0) return alert("Insira um valor maior que 0");
-        
         this.disabled = true;
         this.innerText = "Processando...";
-        
         fetch("/aposta_multipla", {
             method: "POST", headers: {"Content-Type": "application/json"},
             body: JSON.stringify({selecoes, valor})
         }).then(r => r.json()).then(resp => {
-            if(resp.ok) { alert("Aposta aceita!"); location.reload(); } 
-            else { alert(resp.erro); this.disabled = false; this.innerText = "Finalizar Bilhete"; }
+            if(resp.ok) { alert("Aposta aceita!"); location.reload(); } else { alert(resp.erro); this.disabled = false; this.innerText = "Finalizar Bilhete"; }
         });
     });
 </script>
