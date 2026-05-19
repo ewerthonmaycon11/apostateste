@@ -45,9 +45,10 @@
                                 </p>
                                 
                                 <p class="text-xs text-orange-500 font-bold mt-2 uppercase">
-                                    {{ s.tipo }} • {{ s.descricao }} 
-                                    <span class="text-gray-400"> (Odd: {{ "%.2f"|format(s.odd) }})</span>
-                                </p>
+                                    {{ s.tipo }} • {{ s.escolhido_nome if s.escolhido_nome else s.descricao }}
+                                
+                                <span class="text-gray-400"> (Odd: {{ "%.2f"|format(s.odd) }})</span>
+                            </p>
                             </div>
                             
                             <div class="text-right">
