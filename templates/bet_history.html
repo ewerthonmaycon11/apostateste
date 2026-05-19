@@ -44,10 +44,10 @@
                                     {{ s.data_hora }}
                                 </p>
                                 
-                                <p class="text-xs text-orange-500 font-bold mt-2 uppercase">
-                                    {{ s.tipo }} • <span class="text-orange">{{ s.escolhido_nome if s.escolhido_nome else s.descricao }}</span>
+                               <p class="text-xs text-orange-500 font-bold mt-2 uppercase">
+                                    {{ s.tipo }} • <span>{{ s.escolhido_nome if s.escolhido_nome else s.descricao }}</span>
                                     <span class="text-gray-400 ml-2">(Odd: {{ "%.2f"|format(s.odd) }})</span>
-                                </p>
+                              </p>
                             </div>
                             
                             <div class="text-right">
