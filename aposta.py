@@ -32,7 +32,12 @@ def row_to_dict(row):
 def init_db():
     conn = get_conn()
     c = conn.cursor()
-
+    #tab
+    # 1. Comando ALTER TABLE (deve estar dentro de um execute)
+    c.execute('''
+        ALTER TABLE bet_selections 
+        ADD COLUMN IF NOT EXISTS escolhido_nome VARCHAR(255);
+    ''')
     # Usuários
     c.execute('''
     CREATE TABLE IF NOT EXISTS usuarios (
