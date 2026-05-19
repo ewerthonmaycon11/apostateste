@@ -559,6 +559,7 @@ def apostar():
 
 # ------------------ HISTÓRICO / EXIBIR APOSTAS ------------------
 # Rota /historico (sem alterações, pois o LEFT JOIN já estava correto)
+# ------------------ HISTÓRICO / EXIBIR APOSTAS ------------------
 @app.route("/historico")
 def historico():
     if "usuario_id" not in session:
@@ -570,31 +571,20 @@ def historico():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    # Consulta principal das apostas do usuário
-    # No arquivo aposta.py, rota /historico
+    # 1. Busca as apostas
     cur.execute("""
-        SELECT 
-            s.id,
-            s.bet_id,
-            s.tipo,
-            s.escolha,
-            s.descricao,
-            s.odd,
-            s.resultado,
-            s.data_hora,
-            COALESCE(j.time_a, 'N/A') AS time_a,
-            COALESCE(j.time_b, 'N/A') AS time_b
-        FROM bet_selections s
-        LEFT JOIN jogos j ON s.jogo_id = j.id
-        WHERE s.bet_id = ANY(%s)
-        ORDER BY s.id DESC;
-    """, (bet_ids,))
+        SELECT id, stake, total_odd, potential, status, criado_em
+        FROM bets
+        WHERE usuario_id = %s
+        ORDER BY criado_em DESC;
+    """, (user_id,))
     bets = cur.fetchall()
 
+    # 2. Só tenta buscar seleções SE existirem apostas
     if bets:
         bet_ids = [b["id"] for b in bets]
 
-        # Seleções com JOIN em jogos para pegar os nomes corretos dos times
+        # Seleções com JOIN em jogos
         cur.execute("""
             SELECT 
                 s.id,
@@ -618,6 +608,7 @@ def historico():
         for b in bets:
             b["selections"] = [s for s in selections if s["bet_id"] == b["id"]]
     else:
+        # Se não houver apostas, inicializa a lista vazia para evitar erro no template
         for b in bets:
             b["selections"] = []
 
