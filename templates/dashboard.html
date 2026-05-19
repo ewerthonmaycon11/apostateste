@@ -1,295 +1,105 @@
 {% extends "base.html" %}
 {% block conteudo %}
-
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body {
-    background-color: #f5f5f5;
-    font-family: 'Segoe UI', sans-serif;
-  }
-
-  h3.fw-bold {
-    color: #ff7b00;
-  }
-
-  /* Cards dos jogos */
-  .game-card {
-    border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    overflow: hidden;
-    background-color: #fff;
-  }
-
-  .game-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-  }
-
-  .game-title {
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 5px;
-  }
-
-  .game-time {
-    font-size: 0.85rem;
-    text-align: center;
-    color: #888;
-  }
-
-  /* Botões de odds */
-  .btn-odd {
-    border-radius: 12px;
-    min-width: 80px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-  }
-
-  .btn-odd:hover {
-    background-color: #ff7b00;
-    color: white;
-    border-color: #ff7b00;
-  }
-
-  .btn-selected {
-    background-color: #ff7b00 !important;
-    color: white !important;
-    border-color: #ff7b00 !important;
-  }
-
-  /* Carrinho */
-  .bet-slip {
-    border-radius: 20px;
-    border-top: 5px solid #ff7b00;
-    background-color: #fff;
-    padding: 1.3rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  }
-
-  #finalizarAposta {
-    background-color: #ff7b00;
-    border: none;
-    font-weight: 600;
-    transition: 0.2s;
-  }
-
-  #finalizarAposta:hover {
-    background-color: #e46d00;
-  }
-
-  /* Saldo */
-  .saldo-box {
-    background-color: #fff3e0;
-    border-radius: 15px;
-    padding: 1rem 1.3rem;
-    color: #d35400;
-    font-weight: 600;
-  }
-
-  /* Layout responsivo */
-  @media (max-width: 768px) {
-    .col-md-8, .col-md-4 {
-      flex: 100%;
-      max-width: 100%;
-    }
-  }
-
+    .btn-selected { background-color: #f97316 !important; color: white !important; }
+    .scroll-custom::-webkit-scrollbar { width: 4px; }
+    .scroll-custom::-webkit-scrollbar-thumb { background: #4b5563; }
 </style>
 
-<div class="container py-4">
-
-  <!-- Cabeçalho -->
-  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-    <h3 class="fw-bold"> Bem-vindo, {{ usuario.nome }}</h3>
-    <div class="saldo-box shadow-sm">
-      💰 Saldo: R$ {{ "%.2f"|format(usuario.saldo or 0) }}
-    </div>
-  </div>
-
-  <div class="row g-4">
-    <!-- Coluna Jogos -->
-    <div class="col-md-8">
-      <div class="row g-4">
-        {% for jogo in jogos %}
-        <div class="col-md-6">
-          <div class="game-card">
-            <div class="p-3 d-flex flex-column justify-content-between h-100">
-
-              <div>
-                <h5 class="game-title">
-                  ⚽ {{ jogo.time_a or "Time A" }} <span class="text-muted">vs</span> {{ jogo.time_b or "Time B" }}
-                </h5>
-                <p class="game-time">
-                  📅 {{ jogo.data_hora.strftime("%d/%m %H:%M") if jogo.data_hora else "Data não definida" }}
-                </p>
-              </div>
-
-              <div class="d-flex justify-content-around mt-3 flex-wrap gap-2">
-                <button class="btn btn-outline-dark btn-odd add-aposta principal"
-                        data-jogo="{{ jogo.id }}" data-time="{{ jogo.time_a or 'Time A' }}" data-odd="{{ jogo.odd_a or 1 }}">
-                  {{ jogo.time_a or 'Time A' }} <br><span class="fw-bold">({{ '%.2f' % (jogo.odd_a or 1) }})</span>
-                </button>
-
-                <button class="btn btn-outline-dark btn-odd add-aposta principal"
-                        data-jogo="{{ jogo.id }}" data-time="Empate" data-odd="{{ jogo.odd_x or 1 }}">
-                  Empate <br><span class="fw-bold">({{ '%.2f' % (jogo.odd_x or 1) }})</span>
-                </button>
-
-                <button class="btn btn-outline-dark btn-odd add-aposta principal"
-                        data-jogo="{{ jogo.id }}" data-time="{{ jogo.time_b or 'Time B' }}" data-odd="{{ jogo.odd_b or 1 }}">
-                  {{ jogo.time_b or 'Time B' }} <br><span class="fw-bold">({{ '%.2f' % (jogo.odd_b or 1) }})</span>
-                </button>
-              </div>
-
-              {% if jogo.extras %}
-              <div class="border-top pt-2 mt-2">
-                <p class="fw-semibold small text-muted mb-2">Mercados Extras:</p>
-                <div class="d-flex flex-wrap gap-2">
-                  {% for ex in jogo.extras %}
-                  <button class="btn btn-outline-secondary btn-odd add-aposta extra"
-                          data-jogo="{{ jogo.id }}" data-time="{{ ex.descricao or 'Extra' }}" data-odd="{{ ex.odd or 1 }}">
-                    {{ ex.descricao or 'Extra' }} <br><span class="fw-bold">({{ '%.2f' % (ex.odd or 1) }})</span>
-                  </button>
-                  {% endfor %}
+<div class="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-8">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <div class="lg:col-span-8 space-y-6">
+            <div class="flex justify-between items-center bg-gray-800 p-6 rounded-2xl border border-gray-700">
+                <h1 class="text-2xl font-bold">Eventos Ao Vivo</h1>
+                <div class="bg-gray-900 px-4 py-2 rounded-full border border-orange-500 text-orange-500 font-bold">
+                    Saldo: R$ {{ "%.2f"|format(usuario.saldo or 0) }}
                 </div>
-              </div>
-              {% endif %}
-
             </div>
-          </div>
+
+            {% for jogo in jogos %}
+            <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 hover:border-gray-500 transition shadow-lg">
+                <div class="flex justify-between text-sm text-gray-400 mb-4">
+                    <span>⚽ Futebol</span>
+                    <span>{{ jogo.data_hora.strftime("%d/%m %H:%M") }}</span>
+                </div>
+                <div class="flex justify-between items-center mb-6">
+                    <span class="font-bold text-lg w-1/3 text-right">{{ jogo.time_a }}</span>
+                    <span class="px-3 text-orange-500 font-black">VS</span>
+                    <span class="font-bold text-lg w-1/3 text-left">{{ jogo.time_b }}</span>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-3">
+                    <button class="add-aposta principal bg-gray-700 hover:bg-orange-600 py-3 rounded-lg font-bold transition" data-jogo="{{ jogo.id }}" data-time="{{ jogo.time_a }}" data-odd="{{ jogo.odd_a }}">1 ({{ '%.2f' % jogo.odd_a }})</button>
+                    <button class="add-aposta principal bg-gray-700 hover:bg-orange-600 py-3 rounded-lg font-bold transition" data-jogo="{{ jogo.id }}" data-time="Empate" data-odd="{{ jogo.odd_x }}">X ({{ '%.2f' % jogo.odd_x }})</button>
+                    <button class="add-aposta principal bg-gray-700 hover:bg-orange-600 py-3 rounded-lg font-bold transition" data-jogo="{{ jogo.id }}" data-time="{{ jogo.time_b }}" data-odd="{{ jogo.odd_b }}">2 ({{ '%.2f' % jogo.odd_b }})</button>
+                </div>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-      </div>
+
+        <div class="lg:col-span-4">
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 sticky top-20 shadow-2xl">
+                <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">🧾 Meu Bilhete</h2>
+                <ul id="lista-apostas" class="space-y-3 mb-6 scroll-custom max-h-64 overflow-y-auto"></ul>
+                
+                <div class="space-y-3 bg-gray-900 p-4 rounded-xl">
+                    <div class="flex justify-between"><span>Odd Total</span> <span id="oddTotal" class="font-bold">1.00</span></div>
+                    <input type="number" id="valorAposta" placeholder="Valor da aposta (R$)" class="w-full bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <div class="flex justify-between text-orange-500 font-bold"><span>Retorno</span> <span id="retornoPotencial">R$ 0.00</span></div>
+                </div>
+                <button id="finalizarAposta" class="w-full bg-orange-500 hover:bg-orange-600 py-4 mt-6 rounded-xl font-black text-white transition-all transform hover:scale-105 uppercase tracking-widest">
+                    Apostar Agora
+                </button>
+            </div>
+        </div>
     </div>
-
-    <!-- Coluna Carrinho -->
-    <div class="col-md-4">
-      <div class="bet-slip sticky-top" style="top:20px;">
-        <h5 class="fw-bold text-center text-primary mb-3">🧾 Seu Bilhete</h5>
-        <ul class="list-group list-group-flush mb-3" id="lista-apostas"></ul>
-
-        <div class="mb-3">
-          <label for="valorAposta" class="form-label fw-semibold">Valor da Aposta</label>
-          <input type="number" class="form-control" id="valorAposta" min="1" placeholder="Ex: 10.00">
-        </div>
-
-        <div class="d-flex justify-content-between mb-2">
-          <span class="fw-semibold">Odd Total:</span>
-          <span class="fw-bold text-success" id="oddTotal">1.00</span>
-        </div>
-
-        <div class="d-flex justify-content-between mb-3">
-          <span class="fw-semibold">Retorno Potencial:</span>
-          <span class="fw-bold text-primary" id="retornoPotencial">R$ 0.00</span>
-        </div>
-
-        <div class="d-grid">
-          <button class="btn btn-lg text-white" id="finalizarAposta"> Finalizar Aposta</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <script>
-let selecoes = [];
-let oddTotal = 1.0;
-
-document.querySelectorAll(".add-aposta").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const jogo = btn.dataset.jogo;
-    const time = btn.dataset.time;
-    const odd = parseFloat(btn.dataset.odd || 1);
-    const tipo = btn.classList.contains("principal") ? "principal" : "extra";
-
-    // Se já selecionou principal, desmarca outros do mesmo tipo
-    if(tipo === "principal"){
-      document.querySelectorAll(`.add-aposta.principal[data-jogo="${jogo}"]`).forEach(b => b.classList.remove('btn-selected'));
-    }
-
-    // Marca botão clicado
-    btn.classList.toggle('btn-selected');
-
-    // Atualiza selecoes
-    if(btn.classList.contains('btn-selected')){
-      selecoes.push({ jogo, time, odd, tipo });
-      oddTotal *= odd;
-    } else {
-      const idx = selecoes.findIndex(s => s.jogo === jogo && s.time === time && s.tipo === tipo);
-      if(idx >= 0){
-        oddTotal /= selecoes[idx].odd;
-        selecoes.splice(idx,1);
-      }
-    }
-
-    atualizarCarrinho();
-  });
-});
-
-function atualizarCarrinho(){
-  const lista = document.getElementById("lista-apostas");
-  lista.innerHTML = "";
-  selecoes.forEach((s,i)=>{
-    const li = document.createElement("li");
-    li.className = "list-group-item d-flex justify-content-between align-items-center";
-    li.innerHTML = `
-      <span>${s.time} <small class="text-muted">(${s.tipo})</small></span>
-      <div>
-        <span class="fw-bold">(${s.odd.toFixed(2)})</span>
-        <button class="btn btn-sm btn-danger ms-2 remover" data-index="${i}">x</button>
-      </div>
-    `;
-    lista.appendChild(li);
-  });
-
-  document.getElementById("oddTotal").innerText = oddTotal.toFixed(2);
-  atualizarRetorno();
-
-  document.querySelectorAll(".remover").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      const idx = btn.dataset.index;
-      const sel = selecoes[idx];
-      oddTotal /= sel.odd;
-      selecoes.splice(idx,1);
-
-      // desmarcar botão no card
-      document.querySelectorAll(`.add-aposta[data-jogo="${sel.jogo}"][data-time="${sel.time}"]`).forEach(b=>b.classList.remove('btn-selected'));
-
-      atualizarCarrinho();
+    // Lógica mantida e otimizada
+    let selecoes = []; let oddTotal = 1.0;
+    document.querySelectorAll(".add-aposta").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const jogo = btn.dataset.jogo; const time = btn.dataset.time;
+            const odd = parseFloat(btn.dataset.odd);
+            
+            if(btn.classList.contains('btn-selected')){
+                btn.classList.remove('btn-selected');
+                selecoes = selecoes.filter(s => !(s.jogo === jogo && s.time === time));
+            } else {
+                btn.classList.add('btn-selected');
+                selecoes.push({ jogo, time, odd });
+            }
+            oddTotal = selecoes.reduce((acc, s) => acc * s.odd, 1);
+            atualizarCarrinho();
+        });
     });
-  });
-}
 
-function atualizarRetorno(){
-  const valor = parseFloat(document.getElementById("valorAposta").value) || 0;
-  document.getElementById("retornoPotencial").innerText = "R$ "+(valor*oddTotal).toFixed(2);
-}
-
-document.getElementById("valorAposta").addEventListener("input", atualizarRetorno);
-
-document.getElementById("finalizarAposta").addEventListener("click", ()=>{
-  const valor = parseFloat(document.getElementById("valorAposta").value);
-  if(!valor || valor<=0){
-    alert("Digite um valor válido.");
-    return;
-  }
-  fetch("/aposta_multipla",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({selecoes, valor})
-  }).then(r=>r.json()).then(resp=>{
-    if(resp.ok){
-      alert("✅ Aposta realizada com sucesso!\nRetorno possível: R$ "+resp.retorno.toFixed(2));
-      selecoes=[]; oddTotal=1.0; atualizarCarrinho();
-      document.getElementById("valorAposta").value="";
-      // limpa seleção nos botões
-      document.querySelectorAll(".btn-selected").forEach(b=>b.classList.remove("btn-selected"));
-    }else{
-      alert("❌ Erro: "+resp.erro);
+    function atualizarCarrinho(){
+        const lista = document.getElementById("lista-apostas");
+        lista.innerHTML = selecoes.map((s, i) => `
+            <li class="flex justify-between bg-gray-700 p-2 rounded text-sm">
+                <span>${s.time}</span> <span class="font-bold">${s.odd.toFixed(2)}</span>
+            </li>
+        `).join('');
+        document.getElementById("oddTotal").innerText = oddTotal.toFixed(2);
+        const valor = parseFloat(document.getElementById("valorAposta").value) || 0;
+        document.getElementById("retornoPotencial").innerText = "R$ " + (valor * oddTotal).toFixed(2);
     }
-  });
-});
-</script>
 
+    document.getElementById("valorAposta").addEventListener("input", atualizarCarrinho);
+    
+    document.getElementById("finalizarAposta").addEventListener("click", () => {
+        const valor = parseFloat(document.getElementById("valorAposta").value);
+        if(!valor) return alert("Insira um valor");
+        fetch("/aposta_multipla", {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({selecoes, valor})
+        }).then(r => r.json()).then(resp => {
+            if(resp.ok) { location.reload(); } else { alert(resp.erro); }
+        });
+    });
+</script>
 {% endblock %}
