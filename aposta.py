@@ -571,12 +571,24 @@ def historico():
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     # Consulta principal das apostas do usuário
+    # No arquivo aposta.py, rota /historico
     cur.execute("""
-        SELECT id, stake, total_odd, potential, status, criado_em
-        FROM bets
-        WHERE usuario_id = %s
-        ORDER BY criado_em DESC;
-    """, (user_id,))
+        SELECT 
+            s.id,
+            s.bet_id,
+            s.tipo,
+            s.escolha,
+            s.descricao,
+            s.odd,
+            s.resultado,
+            s.data_hora,
+            COALESCE(j.time_a, 'N/A') AS time_a,
+            COALESCE(j.time_b, 'N/A') AS time_b
+        FROM bet_selections s
+        LEFT JOIN jogos j ON s.jogo_id = j.id
+        WHERE s.bet_id = ANY(%s)
+        ORDER BY s.id DESC;
+    """, (bet_ids,))
     bets = cur.fetchall()
 
     if bets:
